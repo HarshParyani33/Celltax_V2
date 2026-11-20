@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <radialGradient id="brassGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#dfbf7a"/>
+      <stop offset="60%" stop-color="#c5a059"/>
+      <stop offset="100%" stop-color="#7a5e2a"/>
+    </radialGradient>
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Outer Ring with Notches -->
+  <circle cx="100" cy="100" r="92" fill="none" stroke="url(#brassGrad)" stroke-width="2.5" opacity="0.85" />
+  <circle cx="100" cy="100" r="86" fill="none" stroke="#c5a059" stroke-width="1" stroke-dasharray="2, 4" opacity="0.6" />
+  
+  <!-- Outer Circular Text Path -->
+  <path id="textCircle" d="M 100,100 m -74,0 a 74,74 0 1,1 148,0 a 74,74 0 1,1 -148,0" fill="none"/>
+  
+  <text font-family="'Cinzel', serif" font-size="8.5" font-weight="700" fill="#dfbf7a" letter-spacing="2.8">
+    <textPath href="#textCircle" startOffset="50%" text-anchor="middle">
+      DEPARTMENT OF EXTRAORDINARY THINGS
+    </textPath>
+  </text>
+
+  <!-- Inner Concentric Ring -->
+  <circle cx="100" cy="100" r="62" fill="#070d0a" stroke="url(#brassGrad)" stroke-width="1.8" />
+  <circle cx="100" cy="100" r="56" fill="none" stroke="#213a2e" stroke-width="1" />
+
+  <!-- Geometric Astrolabe Symbol -->
+  <!-- Eight-pointed star / compass -->
+  <g stroke="url(#brassGrad)" stroke-width="1.2" fill="none" opacity="0.9">
+    <line x1="100" y1="46" x2="100" y2="154" stroke-dasharray="1, 2" />
+    <line x1="46" y1="100" x2="154" y2="100" stroke-dasharray="1, 2" />
+    <polygon points="100,52 105,95 148,100 105,105 100,148 95,105 52,100 95,95" fill="none" stroke="#c5a059" stroke-width="1.5" />
+    <circle cx="100" cy="100" r="26" stroke="#c5a059" stroke-width="1" stroke-dasharray="3, 3" />
+    <circle cx="100" cy="100" r="14" stroke="#dfbf7a" stroke-width="1.5" fill="#122019" />
+  </g>
+
+  <!-- Central Seal Monogram -->
+  <text x="100" y="104" font-family="'Cinzel', serif" font-size="11" font-weight="900" fill="#dfbf7a" text-anchor="middle" letter-spacing="1">
+    012
+  </text>
+
+  <!-- Bottom Archival Arc -->
+  <path id="bottomArc" d="M 100,100 m -50,0 a 50,50 0 0,0 100,0" fill="none"/>
+  <text font-family="'Courier Prime', monospace" font-size="6" fill="#8e7137" letter-spacing="2">
+    <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">
+      CASE NO. 012 · CLASSIFIED
+    </textPath>
+  </text>
+</svg>

@@ -1,0 +1,40 @@
+{
+  "mode": "implement",
+  "objective": "Build Phase 1 foundation and first three cinematic screens of The Department of Extraordinary Things (Case No. 012)",
+  "acceptance_criteria": [
+    "Application starts successfully with Vite + React + TypeScript + Tailwind CSS",
+    "Screen A: Access Terminal with interactive terminal prompt, credential validation, error state, and access transition",
+    "Screen B: Case Briefing with confidential case-file layout, metadata, dossier reveal, and Accept action",
+    "Screen C: Evidence Archive with 3 inspectable objects (photograph, handwritten document, unidentified artefact) with modals/detail views",
+    "Navigation and Framer Motion transitions work smoothly between all three screens with reduced-motion support",
+    "Investigation visual identity (dark forest green, charcoal, aged paper, brass accents, archival typography) implemented",
+    "Museum design tokens and modular architecture separated and prepared for future phases",
+    "Responsive design verified on desktop and mobile viewports with no overflow",
+    "Visual assets loaded correctly without external broken hotlinks",
+    "TypeScript strict check (tsc --noEmit) and Vite production build (vite build) pass with 0 errors",
+    "Comprehensive README documenting setup, commands, architecture, and testing without public birthday spoilers",
+    "Visual inspection with browser automation verifying desktop and mobile rendering"
+  ],
+  "non_goals": [
+    "No premature Phase 2 features (full puzzle system, museum transformation, witness statements, personal audio exhibits)",
+    "No backend service (pure client-side architecture)",
+    "No birthday-related naming in public repo/README"
+  ],
+  "risk": "medium",
+  "budget": "balanced",
+  "allowed_write_scope": [
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "tsconfig.node.json",
+    "vite.config.ts",
+    "tailwind.config.js",
+    "postcss.config.js",
+    "index.html",
+    "src/**",
+    "public/**",
+    "README.md",
+    ".gravitas/**"
+  ],
+  "verification": "impact"
+}
