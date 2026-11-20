@@ -1,9 +1,10 @@
 // Zero-dependency Procedural Web Audio System for Atmospheric Feedback
-// Respects user interaction and begins muted or quiet with instant mute toggle.
+// Respects browser autoplay policy: starts MUTED by default, initializes AudioContext
+// only after an explicit user interaction (e.g. clicking the sound toggle button).
 
 class SoundFX {
   private ctx: AudioContext | null = null;
-  private isMuted: boolean = false;
+  private isMuted: boolean = true; // Muted by default for accessibility and policy compliance
 
   private getContext(): AudioContext | null {
     if (this.isMuted) return null;
@@ -21,6 +22,11 @@ class SoundFX {
 
   public toggleMute(): boolean {
     this.isMuted = !this.isMuted;
+    if (this.isMuted && this.ctx && this.ctx.state === 'running') {
+      this.ctx.suspend().catch(() => {});
+    } else if (!this.isMuted) {
+      this.getContext();
+    }
     return this.isMuted;
   }
 
@@ -40,7 +46,7 @@ class SoundFX {
       osc.frequency.setValueAtTime(600 + Math.random() * 300, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.04);
 
-      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.setValueAtTime(0.03, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
 
       osc.connect(gain);
@@ -65,7 +71,7 @@ class SoundFX {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.06);
 
-        gain.gain.setValueAtTime(0.06, ctx.currentTime + idx * 0.06);
+        gain.gain.setValueAtTime(0.05, ctx.currentTime + idx * 0.06);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2 + idx * 0.06);
 
         osc.connect(gain);
@@ -89,7 +95,7 @@ class SoundFX {
       osc.frequency.setValueAtTime(110, ctx.currentTime);
       osc.frequency.setValueAtTime(95, ctx.currentTime + 0.15);
 
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 
       osc.connect(gain);
@@ -112,7 +118,7 @@ class SoundFX {
       osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
       osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3); // A5
 
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
 
       osc.connect(gain);

@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldAlert, ArrowRight, CheckCircle2, Lock, Terminal, Key } from 'lucide-react';
+import { ShieldAlert, ArrowRight, CheckCircle2, Lock, Terminal, Key, FastForward } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+import { pageTransition } from '../utils/animations';
 
 const TERMINAL_LINES = [
   "INITIALIZING CLASSIFIED ARCHIVE PROTOCOL...",
-  "ESTABLISHING SECURE CONNECTION TO CENTRAL VAULT...",
-  "AUTHENTICATING TERMINAL NODE // SEC-012...",
+  "ESTABLISHING TERMINAL NODE // LOCAL GATEWAY 012...",
+  "VERIFYING SESSION INTEGRITY...",
   "THE DEPARTMENT OF EXTRAORDINARY THINGS",
   "RESTRICTED ACCESS — CONFIDENTIAL COLLECTION",
   "CASE NO. 012",
@@ -15,8 +16,8 @@ const TERMINAL_LINES = [
   "Enter your access credential."
 ];
 
-// Accepted clearance credentials (configurable placeholder development codes)
-const ACCEPTED_CODES = ["EXTRAORDINARY", "012", "CASE012", "CONFIDENTIAL", "ARCHIVE", "AGENT"];
+// Valid investigation clearance designations
+const ACCEPTED_CODES = ["EXTRAORDINARY", "012", "CASE012", "CONFIDENTIAL", "ARCHIVE", "AGENT", "DIRECTIVE12", "INVESTIGATOR"];
 
 export const AccessTerminal: React.FC = () => {
   const navigate = useNavigate();
@@ -28,25 +29,45 @@ export const AccessTerminal: React.FC = () => {
   const [isGranted, setIsGranted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Typewriter line sequencing
+  // Typewriter line sequencing with clean cancellation for React Strict Mode
   useEffect(() => {
-    let currentLineIdx = 0;
+    let isCancelled = false;
+    let lineIdx = 0;
+    setDisplayedLines([]);
+    setIsTypingComplete(false);
+
     const interval = setInterval(() => {
-      if (currentLineIdx < TERMINAL_LINES.length) {
-        setDisplayedLines((prev) => [...prev, TERMINAL_LINES[currentLineIdx]]);
+      if (isCancelled) return;
+      if (lineIdx < TERMINAL_LINES.length) {
+        const nextLine = TERMINAL_LINES[lineIdx];
+        setDisplayedLines((prev) => [...prev, nextLine]);
         soundFx.playKeypress();
-        currentLineIdx++;
+        lineIdx++;
       } else {
         clearInterval(interval);
-        setIsTypingComplete(true);
-        setTimeout(() => {
-          inputRef.current?.focus();
-        }, 150);
+        if (!isCancelled) {
+          setIsTypingComplete(true);
+          setTimeout(() => {
+            inputRef.current?.focus();
+          }, 100);
+        }
       }
-    }, 280);
+    }, 220);
 
-    return () => clearInterval(interval);
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
   }, []);
+
+  const handleSkipIntro = () => {
+    soundFx.playKeypress();
+    setDisplayedLines(TERMINAL_LINES);
+    setIsTypingComplete(true);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     soundFx.playKeypress();
@@ -56,13 +77,13 @@ export const AccessTerminal: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!credential.trim()) return;
+    const cleanCode = credential.trim().toUpperCase();
+    if (!cleanCode) return;
 
     setIsAuthenticating(true);
     soundFx.playKeypress();
 
     setTimeout(() => {
-      const cleanCode = credential.trim().toUpperCase();
       if (ACCEPTED_CODES.includes(cleanCode)) {
         setIsGranted(true);
         setErrorState(null);
@@ -71,38 +92,57 @@ export const AccessTerminal: React.FC = () => {
         // Smooth transition to briefing after authentication reveal
         setTimeout(() => {
           navigate('/briefing');
-        }, 1400);
+        }, 1300);
       } else {
         setIsAuthenticating(false);
-        setErrorState("ACCESS DENIED — INVALID CLEARANCE IDENTIFIER");
+        setErrorState("ACCESS DENIED — UNRECOGNIZED CLEARANCE DESIGNATION");
         soundFx.playAccessDenied();
         inputRef.current?.focus();
       }
-    }, 700);
+    }, 600);
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-investigation-base flex flex-col justify-between p-4 sm:p-8 md:p-12 overflow-hidden terminal-scanlines">
-      
+    <motion.div
+      variants={pageTransition}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="relative min-h-screen w-full bg-investigation-base flex flex-col justify-between p-4 sm:p-8 md:p-12 overflow-hidden terminal-scanlines"
+    >
       {/* Background Radial Vignette */}
       <div className="absolute inset-0 bg-vignette pointer-events-none" />
 
       {/* Top Header Badge */}
-      <div className="relative z-10 flex items-center justify-between border-b border-investigation-border/40 pb-4">
+      <header className="relative z-10 flex items-center justify-between border-b border-investigation-border/40 pb-4">
         <div className="flex items-center space-x-3">
           <img src="/seal.svg" alt="Department Seal" className="w-8 h-8 opacity-80" />
           <div className="text-xs font-mono text-investigation-muted tracking-widest uppercase">
-            SEC-NODE // TERMINAL 012
+            ARCHIVE NODE // TERMINAL 012
           </div>
         </div>
-        <div className="flex items-center space-x-2 text-[11px] font-mono text-brass-light border border-brass/30 px-2.5 py-1 rounded bg-investigation-surface/60">
-          <Lock className="w-3.5 h-3.5 text-brass" />
-          <span>SECURITY PROTOCOL ENFORCED</span>
+        
+        <div className="flex items-center space-x-3">
+          {!isTypingComplete && (
+            <button
+              onClick={handleSkipIntro}
+              className="text-[11px] font-mono text-investigation-muted hover:text-brass transition-colors flex items-center space-x-1 px-2 py-1 rounded border border-transparent hover:border-brass/30 focus:outline-none focus-visible:ring-1 focus-visible:ring-brass"
+              title="Skip intro typing"
+            >
+              <FastForward className="w-3 h-3 text-brass" />
+              <span>SKIP INTRO</span>
+            </button>
+          )}
+
+          <div className="flex items-center space-x-2 text-[11px] font-mono text-brass-light border border-brass/30 px-2.5 py-1 rounded bg-investigation-surface/60">
+            <Lock className="w-3.5 h-3.5 text-brass" />
+            <span>CLEARANCE VERIFICATION PROTOCOL</span>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Center Console Container */}
-      <div className="relative z-10 max-w-3xl w-full mx-auto my-auto py-8">
+      <main id="main-content" className="relative z-10 max-w-3xl w-full mx-auto my-auto py-8">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -117,13 +157,13 @@ export const AccessTerminal: React.FC = () => {
           {/* Console Header Bar */}
           <div className="flex items-center space-x-2 border-b border-investigation-border/60 pb-4 mb-6 text-xs text-investigation-muted">
             <Terminal className="w-4 h-4 text-brass" />
-            <span className="text-brass-light font-bold">DEPARTMENT SECURE TERMINAL</span>
+            <span className="text-brass-light font-bold">DEPARTMENT ARCHIVE TERMINAL</span>
             <span>//</span>
-            <span>CLEARANCE VERIFICATION GATEWAY</span>
+            <span>CLEARANCE GATEWAY</span>
           </div>
 
           {/* Sequenced Text Stream */}
-          <div className="space-y-3 min-h-[180px] text-xs sm:text-sm leading-relaxed">
+          <div className="space-y-3 min-h-[180px] text-xs sm:text-sm leading-relaxed" aria-live="polite">
             {displayedLines.map((line, idx) => {
               const isTitle = line.includes("THE DEPARTMENT OF EXTRAORDINARY THINGS");
               const isCase = line.includes("CASE NO. 012");
@@ -131,11 +171,8 @@ export const AccessTerminal: React.FC = () => {
               const isPrompt = line.includes("Enter your access credential.");
 
               return (
-                <motion.div
+                <div
                   key={idx}
-                  initial={{ opacity: 0, x: -6 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.2 }}
                   className={`
                     ${isTitle ? 'text-base sm:text-xl font-serif font-bold text-brass tracking-wider pt-2' : ''}
                     ${isRestricted ? 'text-xs tracking-widest text-red-400 font-bold' : ''}
@@ -143,15 +180,15 @@ export const AccessTerminal: React.FC = () => {
                     ${isPrompt ? 'text-investigation-text font-semibold pt-2 text-sm sm:text-base' : 'text-investigation-muted'}
                   `}
                 >
-                  <span className="text-brass/60 mr-2">&gt;</span>
+                  <span className="text-brass/60 mr-2" aria-hidden="true">&gt;</span>
                   {line}
-                </motion.div>
+                </div>
               );
             })}
 
             {/* Blinking Cursor while typing */}
             {!isTypingComplete && (
-              <span className="inline-block w-2.5 h-4 bg-brass animate-pulse ml-1 align-middle" />
+              <span className="inline-block w-2.5 h-4 bg-brass animate-pulse ml-1 align-middle" aria-hidden="true" />
             )}
           </div>
 
@@ -167,21 +204,25 @@ export const AccessTerminal: React.FC = () => {
               >
                 <div className="flex flex-col sm:flex-row gap-3 items-stretch">
                   <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brass">
+                    <label htmlFor="clearance-input" className="sr-only">
+                      Access Credential (Case Designation or Directive Phrase)
+                    </label>
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-brass" aria-hidden="true">
                       <Key className="w-4 h-4" />
                     </div>
                     <input
+                      id="clearance-input"
                       ref={inputRef}
                       type="text"
                       value={credential}
                       onChange={handleInputChange}
-                      placeholder="ENTER CLEARANCE CODE (E.G. EXTRAORDINARY)"
+                      placeholder="ENTER CLEARANCE IDENTIFIER (E.G. CASE NO. OR PHRASE)"
                       disabled={isAuthenticating}
                       autoComplete="off"
                       spellCheck="false"
                       className={`
-                        w-full pl-10 pr-4 py-3 bg-investigation-surface border rounded text-sm sm:text-base font-mono tracking-widest text-parchment placeholder-investigation-muted/50 focus:outline-none transition-all
-                        ${errorState ? 'border-red-500 ring-1 ring-red-500' : 'border-brass/40 focus:border-brass focus:ring-1 focus:ring-brass'}
+                        w-full pl-10 pr-4 py-3 bg-investigation-surface border rounded text-sm sm:text-base font-mono tracking-widest text-parchment placeholder-investigation-muted/50 transition-all focus:outline-none
+                        ${errorState ? 'border-red-500 ring-1 ring-red-500' : 'border-brass/40 focus:border-brass focus-visible:ring-2 focus-visible:ring-brass'}
                         ${isAuthenticating ? 'opacity-70 cursor-not-allowed' : ''}
                       `}
                     />
@@ -190,33 +231,32 @@ export const AccessTerminal: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isAuthenticating || !credential.trim()}
-                    className="px-6 py-3 bg-investigation-card hover:bg-investigation-surface border border-brass text-brass-light hover:text-white rounded font-mono text-xs sm:text-sm font-bold tracking-widest uppercase transition-all flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-brass disabled:opacity-40 disabled:cursor-not-allowed shadow-brass-sm"
+                    className="px-6 py-3 bg-investigation-card hover:bg-investigation-surface border border-brass text-brass-light hover:text-white rounded font-mono text-xs sm:text-sm font-bold tracking-widest uppercase transition-all flex items-center justify-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-brass disabled:opacity-40 disabled:cursor-not-allowed shadow-brass-sm"
                   >
                     <span>{isAuthenticating ? 'AUTHENTICATING...' : 'VERIFY ACCESS'}</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
 
-                {/* Validation Feedback & Developer Hint */}
+                {/* Validation Feedback & Clearance Instructions */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-mono gap-2 pt-1">
                   {errorState ? (
-                    <motion.div
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
+                    <div
+                      role="alert"
+                      aria-live="assertive"
                       className="flex items-center space-x-1.5 text-red-400 font-semibold"
                     >
-                      <ShieldAlert className="w-4 h-4" />
+                      <ShieldAlert className="w-4 h-4" aria-hidden="true" />
                       <span>{errorState}</span>
-                    </motion.div>
+                    </div>
                   ) : (
                     <div className="text-investigation-muted text-[11px]">
-                      AWAITING 8-CHARACTER SECURITY DESIGNATION
+                      AWAITING AUTHORISED INVESTIGATOR DESIGNATION
                     </div>
                   )}
 
-                  {/* Configurable Development Hint */}
-                  <div className="text-[11px] text-investigation-muted/70 sm:text-right">
-                    Demo Clearance: <code className="text-brass/90 bg-investigation-surface px-1.5 py-0.5 rounded border border-investigation-border">EXTRAORDINARY</code> or <code className="text-brass/90 bg-investigation-surface px-1.5 py-0.5 rounded border border-investigation-border">012</code>
+                  <div className="text-[11px] text-investigation-muted/80 sm:text-right">
+                    <span>CLEARANCE DESIGNATION: CASE 012 // EXTRAORDINARY</span>
                   </div>
                 </div>
               </motion.form>
@@ -253,18 +293,18 @@ export const AccessTerminal: React.FC = () => {
           </AnimatePresence>
 
         </motion.div>
-      </div>
+      </main>
 
       {/* Footer Classification Notice */}
-      <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-investigation-muted border-t border-investigation-border/40 pt-4 gap-2">
-        <div>AUTHORIZED ACCESS ONLY // PENALTY FOR UNRECORDED ACCESS APPLIES</div>
+      <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-investigation-muted border-t border-investigation-border/40 pt-4 gap-2">
+        <div>AUTHORIZED ACCESS ONLY // ARCHIVE AUDIT ACTIVE</div>
         <div className="flex items-center space-x-3">
           <span>CLASSIFICATION: CONFIDENTIAL</span>
           <span>•</span>
           <span>EST. ARCHIVE 1984</span>
         </div>
-      </div>
+      </footer>
 
-    </div>
+    </motion.div>
   );
 };

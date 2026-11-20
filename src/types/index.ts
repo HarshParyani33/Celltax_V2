@@ -12,6 +12,7 @@ export interface EvidenceItem {
   material?: string;
   confidenceScore: number;
   imageUrl: string;
+  webpUrl?: string;
   anomalies: string[];
 }
 

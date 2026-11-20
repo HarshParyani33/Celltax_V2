@@ -68,6 +68,8 @@ celltax_v2/
 │   │   ├── evidence-dispatch.jpg
 │   │   └── evidence-artefact.jpg
 │   └── seal.svg                # Department vector crest & emblem
+├── tests/
+│   └── phase1-validation.js    # Automated integration & accessibility validation checks
 ├── src/
 │   ├── components/             # Reusable UI elements (Header, Footer, EvidenceModal)
 │   ├── data/                   # Structured case dossiers and evidence collections
@@ -115,6 +117,7 @@ Visit `http://localhost:5173` in your browser.
 - `npm run build` — Run TypeScript check (`tsc`) and create production build (`dist/`)
 - `npm run preview` — Locally preview the production build
 - `npm run typecheck` — Run TypeScript compiler check without emitting files
+- `npm test` — Run automated integration and accessibility verification suite
 
 ---
 

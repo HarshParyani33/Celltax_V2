@@ -37,6 +37,7 @@ export const EVIDENCE_COLLECTION: EvidenceItem[] = [
     material: "Silver Bromide Emulsion on Cold-Pressed Cotton Rag",
     confidenceScore: 98.4,
     imageUrl: "/images/evidence-photograph.jpg",
+    webpUrl: "/images/evidence-photograph.webp",
     anomalies: [
       "Light reflection at coordinate (42.8, -71.2) shows irregular polarization",
       "Signature stamp matches Department Curatorial Seal 1984"
@@ -61,6 +62,7 @@ export const EVIDENCE_COLLECTION: EvidenceItem[] = [
     material: "Weathered Flax Parchment, Archival Gall Ink, Wax Seal",
     confidenceScore: 96.1,
     imageUrl: "/images/evidence-dispatch.jpg",
+    webpUrl: "/images/evidence-dispatch.webp",
     anomalies: [
       "Handwriting tempo suggests deliberate, solemn composition",
       "Wax seal contains micro-impression of astronomical constellation"
@@ -85,6 +87,7 @@ export const EVIDENCE_COLLECTION: EvidenceItem[] = [
     material: "Engine-Turned Brass, Obsidian Glass, Precision Jewels",
     confidenceScore: 99.8,
     imageUrl: "/images/evidence-artefact.jpg",
+    webpUrl: "/images/evidence-artefact.webp",
     anomalies: [
       "Internal escapement ticks at exactly 60 beats per minute with no spring wound",
       "Inscriptions along perimeter spell out coordinates to an upcoming private celebration"

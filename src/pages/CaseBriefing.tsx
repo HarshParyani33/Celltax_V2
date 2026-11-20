@@ -14,6 +14,7 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { CASE_DOSSIER_DATA } from '../data/evidence';
 import { soundFx } from '../utils/audio';
+import { pageTransition } from '../utils/animations';
 
 export const CaseBriefing: React.FC = () => {
   const navigate = useNavigate();
@@ -28,12 +29,20 @@ export const CaseBriefing: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-investigation-base text-investigation-text selection:bg-brass selection:text-charcoal-900">
+    <motion.div
+      variants={pageTransition}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="min-h-screen flex flex-col bg-investigation-base text-investigation-text selection:bg-brass selection:text-charcoal-900"
+    >
       <Header currentScreen="briefing" />
 
       {/* Main Briefing Dossier Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14">
-        
+      <main
+        id="main-content"
+        className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14"
+      >
         {/* Navigation Breadcrumb / Classification Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-3 border-b border-investigation-border/60">
           <div className="flex items-center space-x-2 text-xs font-mono text-investigation-muted">
@@ -50,14 +59,14 @@ export const CaseBriefing: React.FC = () => {
           </div>
         </div>
 
-        {/* The Confidential Case Dossier Paper Document */}
+        {/* The Confidential Case Dossier Physical Document */}
         <motion.div
-          initial={{ opacity: 0, y: 25, scale: 0.98 }}
+          initial={{ opacity: 0, y: 20, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="relative bg-investigation-forest border border-brass/40 rounded-lg shadow-dossier overflow-hidden"
         >
-          {/* Top Folder Tab Header */}
+          {/* Top Physical Folder Tab Header */}
           <div className="px-6 sm:px-10 py-5 bg-investigation-surface border-b border-investigation-border flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <div className="w-10 h-10 rounded border border-brass/50 bg-investigation-base p-1.5 flex items-center justify-center">
@@ -147,7 +156,7 @@ export const CaseBriefing: React.FC = () => {
             </div>
 
             {/* Artefact Summary Notice */}
-            <div className="p-4 rounded border border-investigation-border/80 bg-investigation-card flex items-center justify-between text-xs font-mono">
+            <div className="p-4 rounded border border-investigation-border/80 bg-investigation-card flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
               <div className="flex items-center space-x-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-brass animate-pulse-subtle" />
                 <span className="text-investigation-text">
@@ -169,7 +178,7 @@ export const CaseBriefing: React.FC = () => {
                 onClick={handleAcceptInvestigation}
                 disabled={isAccepted}
                 className={`
-                  w-full sm:w-auto px-8 py-3.5 rounded font-mono text-xs sm:text-sm font-bold tracking-widest uppercase transition-all flex items-center justify-center space-x-3 shadow-brass
+                  w-full sm:w-auto px-8 py-3.5 rounded font-mono text-xs sm:text-sm font-bold tracking-widest uppercase transition-all flex items-center justify-center space-x-3 shadow-brass focus:outline-none focus-visible:ring-2 focus-visible:ring-brass
                   ${isAccepted 
                     ? 'bg-brass text-charcoal-900 border border-brass' 
                     : 'bg-gradient-to-r from-brass via-brass-light to-brass text-charcoal-900 hover:brightness-110 border border-brass-light'}
@@ -196,6 +205,6 @@ export const CaseBriefing: React.FC = () => {
       </main>
 
       <Footer />
-    </div>
+    </motion.div>
   );
 };

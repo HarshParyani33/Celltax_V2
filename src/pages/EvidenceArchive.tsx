@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Eye, 
   Sparkles, 
@@ -13,6 +13,7 @@ import { EvidenceModal } from '../components/EvidenceModal';
 import { EVIDENCE_COLLECTION } from '../data/evidence';
 import { EvidenceItem } from '../types';
 import { soundFx } from '../utils/audio';
+import { pageTransition } from '../utils/animations';
 
 export const EvidenceArchive: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<EvidenceItem | null>(null);
@@ -31,12 +32,20 @@ export const EvidenceArchive: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-investigation-base text-investigation-text selection:bg-brass selection:text-charcoal-900">
+    <motion.div
+      variants={pageTransition}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="min-h-screen flex flex-col bg-investigation-base text-investigation-text selection:bg-brass selection:text-charcoal-900"
+    >
       <Header currentScreen="archive" />
 
       {/* Main Evidence Room Space */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        
+      <main
+        id="main-content"
+        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
+      >
         {/* Top Header & Archive Status */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-investigation-border/60">
           <div>
@@ -70,7 +79,11 @@ export const EvidenceArchive: React.FC = () => {
         </div>
 
         {/* Filter Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 my-6">
+        <div
+          role="tablist"
+          aria-label="Filter evidence exhibits by type"
+          className="flex flex-wrap items-center justify-between gap-4 my-6"
+        >
           <div className="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
             {[
               { id: 'all', label: 'ALL EXHIBITS (3)' },
@@ -80,12 +93,14 @@ export const EvidenceArchive: React.FC = () => {
             ].map((tab) => (
               <button
                 key={tab.id}
+                role="tab"
+                aria-selected={activeFilter === tab.id}
                 onClick={() => {
                   soundFx.playKeypress();
                   setActiveFilter(tab.id as typeof activeFilter);
                 }}
                 className={`
-                  px-3.5 py-1.5 rounded text-xs font-mono tracking-wider transition-all border whitespace-nowrap
+                  px-3.5 py-1.5 rounded text-xs font-mono tracking-wider transition-all border whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-brass
                   ${activeFilter === tab.id
                     ? 'bg-brass text-charcoal-900 border-brass font-bold shadow-brass-sm'
                     : 'bg-investigation-surface hover:bg-investigation-card text-investigation-muted hover:text-parchment border-investigation-border'}
@@ -113,7 +128,7 @@ export const EvidenceArchive: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 whileHover={{ y: -6 }}
-                className="group relative flex flex-col rounded-lg bg-investigation-surface border border-investigation-border hover:border-brass/70 shadow-evidenceCard hover:shadow-spotlight transition-all duration-300 overflow-hidden cursor-pointer"
+                className="group relative flex flex-col rounded-lg bg-investigation-surface border border-investigation-border hover:border-brass/70 shadow-evidenceCard hover:shadow-spotlight transition-all duration-300 overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
                 onClick={() => handleInspect(item)}
                 tabIndex={0}
                 role="button"
@@ -136,14 +151,19 @@ export const EvidenceArchive: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Exhibit Visual Canvas / Frame */}
+                {/* Exhibit Visual Canvas / Frame with Picture element */}
                 <div className="relative aspect-[4/3] w-full bg-charcoal-900 overflow-hidden border-b border-investigation-border">
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                  />
+                  <picture className="w-full h-full">
+                    {item.webpUrl && (
+                      <source srcSet={item.webpUrl} type="image/webp" />
+                    )}
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </picture>
 
                   {/* Archival Overlay Vignette */}
                   <div className="absolute inset-0 bg-gradient-to-t from-investigation-surface/90 via-transparent to-black/30 pointer-events-none" />
@@ -235,11 +255,16 @@ export const EvidenceArchive: React.FC = () => {
 
       <Footer />
 
-      {/* Visual Inspection Modal Overlay */}
-      <EvidenceModal
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
-      />
-    </div>
+      {/* Visual Inspection Modal Overlay with Proper AnimatePresence Exit Lifecycle */}
+      <AnimatePresence>
+        {selectedItem && (
+          <EvidenceModal
+            key={selectedItem.id}
+            item={selectedItem}
+            onClose={() => setSelectedItem(null)}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
