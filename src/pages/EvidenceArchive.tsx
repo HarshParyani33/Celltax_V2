@@ -15,6 +15,13 @@ import { EvidenceItem } from '../types';
 import { soundFx } from '../utils/audio';
 import { pageTransition } from '../utils/animations';
 
+const FILTER_OPTIONS = [
+  { id: 'all', label: 'ALL EXHIBITS', count: 3 },
+  { id: 'photograph', label: 'PHOTOGRAPHS', count: 1 },
+  { id: 'document', label: 'DISPATCHES', count: 1 },
+  { id: 'artefact', label: 'ARTEFACTS', count: 1 }
+] as const;
+
 export const EvidenceArchive: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<EvidenceItem | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'photograph' | 'document' | 'artefact'>('all');
@@ -78,41 +85,43 @@ export const EvidenceArchive: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Bar */}
+        {/* Accessible Filter Button Group */}
         <div
-          role="tablist"
-          aria-label="Filter evidence exhibits by type"
+          role="group"
+          aria-label="Filter evidence exhibits by category"
           className="flex flex-wrap items-center justify-between gap-4 my-6"
         >
           <div className="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0">
-            {[
-              { id: 'all', label: 'ALL EXHIBITS (3)' },
-              { id: 'photograph', label: 'PHOTOGRAPHS (1)' },
-              { id: 'document', label: 'DISPATCHES (1)' },
-              { id: 'artefact', label: 'ARTEFACTS (1)' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                role="tab"
-                aria-selected={activeFilter === tab.id}
-                onClick={() => {
-                  soundFx.playKeypress();
-                  setActiveFilter(tab.id as typeof activeFilter);
-                }}
-                className={`
-                  px-3.5 py-1.5 rounded text-xs font-mono tracking-wider transition-all border whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-brass
-                  ${activeFilter === tab.id
-                    ? 'bg-brass text-charcoal-900 border-brass font-bold shadow-brass-sm'
-                    : 'bg-investigation-surface hover:bg-investigation-card text-investigation-muted hover:text-parchment border-investigation-border'}
-                `}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {FILTER_OPTIONS.map((filter) => {
+              const isSelected = activeFilter === filter.id;
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => {
+                    soundFx.playKeypress();
+                    setActiveFilter(filter.id);
+                  }}
+                  className={`
+                    px-3.5 py-1.5 rounded text-xs font-mono tracking-wider transition-all border whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-brass
+                    ${isSelected
+                      ? 'bg-brass text-charcoal-900 border-brass font-bold shadow-brass-sm'
+                      : 'bg-investigation-surface hover:bg-investigation-card text-investigation-muted hover:text-parchment border-investigation-border'}
+                  `}
+                >
+                  <span>{filter.label} ({filter.count})</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="text-xs font-mono text-investigation-muted flex items-center space-x-2">
-            <span>SELECT ANY EXHIBIT TO COMMENCE FORENSIC INSPECTION</span>
+          <div
+            className="text-xs font-mono text-investigation-muted flex items-center space-x-2"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <span>SHOWING {filteredItems.length} OF {EVIDENCE_COLLECTION.length} EXHIBITS</span>
           </div>
         </div>
 

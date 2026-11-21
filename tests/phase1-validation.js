@@ -72,7 +72,8 @@ assert(modalSrc.includes('previousFocusRef'), 'Focus restoration implemented');
 
 const archiveSrc = fs.readFileSync(path.resolve('src/pages/EvidenceArchive.tsx'), 'utf8');
 assert(archiveSrc.includes('<AnimatePresence>'), 'AnimatePresence wraps EvidenceModal in Archive');
-assert(archiveSrc.includes('role="tab"'), 'Accessible tab roles on filter buttons');
+assert(archiveSrc.includes('aria-pressed='), 'Accessible filter buttons with aria-pressed state implemented');
+assert(archiveSrc.includes('role="group"'), 'Filter container grouped with accessible role');
 
 const audioSrc = fs.readFileSync(path.resolve('src/utils/audio.ts'), 'utf8');
 assert(audioSrc.includes('private isMuted: boolean = true'), 'Audio engine starts muted by default per policy');

@@ -1,4 +1,4 @@
-import { EvidenceItem, CaseDossier } from '../types';
+import type { EvidenceItem, CaseDossier } from '../types/index.ts';
 
 export const CASE_DOSSIER_DATA: CaseDossier = {
   caseNumber: "CASE NO. 012",

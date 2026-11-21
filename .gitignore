@@ -5,3 +5,4 @@ node_modules/
 dist/
 build/
 *.log
+temp_chrome_user_dir/

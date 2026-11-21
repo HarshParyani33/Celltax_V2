@@ -7,7 +7,7 @@ import { pageTransition } from '../utils/animations';
 
 const TERMINAL_LINES = [
   "INITIALIZING CLASSIFIED ARCHIVE PROTOCOL...",
-  "ESTABLISHING TERMINAL NODE // LOCAL GATEWAY 012...",
+  "LOADING LOCAL ARCHIVE CLIENT...",
   "VERIFYING SESSION INTEGRITY...",
   "THE DEPARTMENT OF EXTRAORDINARY THINGS",
   "RESTRICTED ACCESS — CONFIDENTIAL COLLECTION",
@@ -16,8 +16,20 @@ const TERMINAL_LINES = [
   "Enter your access credential."
 ];
 
-// Valid investigation clearance designations
-const ACCEPTED_CODES = ["EXTRAORDINARY", "012", "CASE012", "CONFIDENTIAL", "ARCHIVE", "AGENT", "DIRECTIVE12", "INVESTIGATOR"];
+// Valid investigation clearance designations (client-side verification gate)
+const ACCEPTED_CODES = [
+  "EXTRAORDINARY",
+  "012",
+  "CASE012",
+  "CASE 012",
+  "CONFIDENTIAL",
+  "ARCHIVE",
+  "AGENT",
+  "DIRECTIVE12",
+  "INVESTIGATOR",
+  "OPEN",
+  "START"
+];
 
 export const AccessTerminal: React.FC = () => {
   const navigate = useNavigate();
@@ -29,44 +41,66 @@ export const AccessTerminal: React.FC = () => {
   const [isGranted, setIsGranted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Typewriter line sequencing with clean cancellation for React Strict Mode
+  // References for reliable teardown of active intervals & timeouts
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const addSafeTimeout = (fn: () => void, delayMs: number) => {
+    const id = setTimeout(() => {
+      timeoutsRef.current = timeoutsRef.current.filter((t) => t !== id);
+      fn();
+    }, delayMs);
+    timeoutsRef.current.push(id);
+    return id;
+  };
+
+  const clearAllTimers = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+  };
+
+  // Typewriter line sequencing with clean interval cancellation for React Strict Mode
   useEffect(() => {
-    let isCancelled = false;
     let lineIdx = 0;
     setDisplayedLines([]);
     setIsTypingComplete(false);
 
-    const interval = setInterval(() => {
-      if (isCancelled) return;
+    intervalRef.current = setInterval(() => {
       if (lineIdx < TERMINAL_LINES.length) {
         const nextLine = TERMINAL_LINES[lineIdx];
         setDisplayedLines((prev) => [...prev, nextLine]);
         soundFx.playKeypress();
         lineIdx++;
       } else {
-        clearInterval(interval);
-        if (!isCancelled) {
-          setIsTypingComplete(true);
-          setTimeout(() => {
-            inputRef.current?.focus();
-          }, 100);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
+        setIsTypingComplete(true);
+        addSafeTimeout(() => {
+          inputRef.current?.focus();
+        }, 80);
       }
     }, 220);
 
     return () => {
-      isCancelled = true;
-      clearInterval(interval);
+      clearAllTimers();
     };
   }, []);
 
+  // Skip intro immediately stops the interval and clears any pending timers
   const handleSkipIntro = () => {
     soundFx.playKeypress();
+    clearAllTimers();
     setDisplayedLines(TERMINAL_LINES);
     setIsTypingComplete(true);
-    setTimeout(() => {
+    addSafeTimeout(() => {
       inputRef.current?.focus();
-    }, 50);
+    }, 40);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,14 +117,14 @@ export const AccessTerminal: React.FC = () => {
     setIsAuthenticating(true);
     soundFx.playKeypress();
 
-    setTimeout(() => {
+    addSafeTimeout(() => {
       if (ACCEPTED_CODES.includes(cleanCode)) {
         setIsGranted(true);
         setErrorState(null);
         soundFx.playAccessGranted();
 
         // Smooth transition to briefing after authentication reveal
-        setTimeout(() => {
+        addSafeTimeout(() => {
           navigate('/briefing');
         }, 1300);
       } else {
@@ -136,7 +170,7 @@ export const AccessTerminal: React.FC = () => {
 
           <div className="flex items-center space-x-2 text-[11px] font-mono text-brass-light border border-brass/30 px-2.5 py-1 rounded bg-investigation-surface/60">
             <Lock className="w-3.5 h-3.5 text-brass" />
-            <span>CLEARANCE VERIFICATION PROTOCOL</span>
+            <span>ARCHIVE ACCESS GATEWAY</span>
           </div>
         </div>
       </header>
@@ -159,7 +193,7 @@ export const AccessTerminal: React.FC = () => {
             <Terminal className="w-4 h-4 text-brass" />
             <span className="text-brass-light font-bold">DEPARTMENT ARCHIVE TERMINAL</span>
             <span>//</span>
-            <span>CLEARANCE GATEWAY</span>
+            <span>ACCESS GATE</span>
           </div>
 
           {/* Sequenced Text Stream */}
@@ -216,7 +250,7 @@ export const AccessTerminal: React.FC = () => {
                       type="text"
                       value={credential}
                       onChange={handleInputChange}
-                      placeholder="ENTER CLEARANCE IDENTIFIER (E.G. CASE NO. OR PHRASE)"
+                      placeholder="ENTER ACCESS CREDENTIAL (E.G. CASE NO. OR PHRASE)"
                       disabled={isAuthenticating}
                       autoComplete="off"
                       spellCheck="false"
@@ -255,8 +289,8 @@ export const AccessTerminal: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="text-[11px] text-investigation-muted/80 sm:text-right">
-                    <span>CLEARANCE DESIGNATION: CASE 012 // EXTRAORDINARY</span>
+                  <div className="text-[11px] text-investigation-muted/70 sm:text-right">
+                    <span>ARCHIVE ACCESS PROTOCOL // CLIENT-SIDE GATE</span>
                   </div>
                 </div>
               </motion.form>
@@ -297,11 +331,11 @@ export const AccessTerminal: React.FC = () => {
 
       {/* Footer Classification Notice */}
       <footer className="relative z-10 flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-investigation-muted border-t border-investigation-border/40 pt-4 gap-2">
-        <div>AUTHORIZED ACCESS ONLY // ARCHIVE AUDIT ACTIVE</div>
+        <div>AUTHORIZED ACCESS ONLY // LOCAL ARCHIVE SESSION</div>
         <div className="flex items-center space-x-3">
           <span>CLASSIFICATION: CONFIDENTIAL</span>
           <span>•</span>
-          <span>EST. ARCHIVE 1984</span>
+          <span>CASE NO. 012</span>
         </div>
       </footer>
 

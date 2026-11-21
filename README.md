@@ -117,7 +117,8 @@ Visit `http://localhost:5173` in your browser.
 - `npm run build` — Run TypeScript check (`tsc`) and create production build (`dist/`)
 - `npm run preview` — Locally preview the production build
 - `npm run typecheck` — Run TypeScript compiler check without emitting files
-- `npm test` — Run automated integration and accessibility verification suite
+- `npm test` — Run automated behavioral and accessibility unit tests (`tests/behavioral.test.js` & `tests/phase1-validation.js`)
+- `npm run test:e2e` — Run real browser end-to-end integration suite via Chrome DevTools Protocol (`tests/browser-e2e.test.js`)
 
 ---
 

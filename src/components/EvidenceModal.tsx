@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { X, Search, FileText, AlertCircle, Compass } from 'lucide-react';
 import { EvidenceItem } from '../types';
 import { soundFx } from '../utils/audio';
@@ -13,10 +13,11 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
   const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     // 1. Capture previously focused element to restore on close
-    previousFocusRef.current = document.activeElement as HTMLElement;
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     // 2. Lock body scroll
     const originalOverflow = document.body.style.overflow;
@@ -25,7 +26,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
     // 3. Focus the primary close button on open
     const focusTimer = setTimeout(() => {
       closeBtnRef.current?.focus();
-    }, 50);
+    }, 40);
 
     // 4. Global Escape key listener
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -36,33 +37,52 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
 
+    // 5. Contain focus if focus ever shifts outside the dialog window
+    const handleFocusIn = (e: FocusEvent) => {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        e.stopPropagation();
+        closeBtnRef.current?.focus();
+      }
+    };
+    document.addEventListener('focusin', handleFocusIn);
+
     return () => {
       clearTimeout(focusTimer);
       window.removeEventListener('keydown', handleGlobalKeyDown);
+      document.removeEventListener('focusin', handleFocusIn);
       document.body.style.overflow = originalOverflow;
-      // Restore focus to trigger element
-      previousFocusRef.current?.focus();
+
+      // Restore focus safely to the original trigger element
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        try {
+          previousFocusRef.current.focus();
+        } catch {}
+      }
     };
   }, [onClose]);
 
-  // Focus trap implementation
+  // Focus trap implementation: handles Tab and Shift+Tab wrapping, plus focus-recovery
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Tab') {
       const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       );
-      if (!focusable || focusable.length === 0) return;
+      if (!focusable || focusable.length === 0) {
+        e.preventDefault();
+        modalRef.current?.focus();
+        return;
+      }
 
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
 
       if (e.shiftKey) {
-        if (document.activeElement === first) {
+        if (document.activeElement === first || !modalRef.current?.contains(document.activeElement)) {
           e.preventDefault();
           last.focus();
         }
       } else {
-        if (document.activeElement === last) {
+        if (document.activeElement === last || !modalRef.current?.contains(document.activeElement)) {
           e.preventDefault();
           first.focus();
         }
@@ -80,7 +100,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.25 }}
+        transition={{ duration: shouldReduceMotion ? 0.01 : 0.25 }}
         onClick={() => {
           soundFx.playKeypress();
           onClose();
@@ -96,10 +116,25 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
         aria-labelledby="evidence-modal-title"
         aria-describedby="evidence-modal-summary"
         tabIndex={-1}
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        initial={{
+          opacity: 0,
+          scale: shouldReduceMotion ? 1 : 0.95,
+          y: shouldReduceMotion ? 0 : 15
+        }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+          y: 0
+        }}
+        exit={{
+          opacity: 0,
+          scale: shouldReduceMotion ? 1 : 0.95,
+          y: shouldReduceMotion ? 0 : 15
+        }}
+        transition={{
+          duration: shouldReduceMotion ? 0.01 : 0.3,
+          ease: [0.16, 1, 0.3, 1]
+        }}
         className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-investigation-surface border border-brass/50 rounded-lg shadow-dossier overflow-hidden z-10 focus:outline-none"
       >
         {/* Top Bar with Classification & Close */}
