@@ -372,19 +372,121 @@ async function run() {
   if (!isFocusInside) throw new Error('Focus is not contained inside the dialog on open');
   console.log('  -> Modal opened with valid ARIA semantics; focus trapped inside dialog');
 
-  // Test Tab wrap from last focusable element to first
-  const tabWrapResult = await evalInBrowser(`(() => {
+  // Test forward Tab wrapping from last element to first element
+  const forwardWrapResult = await evalInBrowser(`(() => {
     const dialog = document.querySelector('[role="dialog"]');
-    if (!dialog) return false;
-    const focusable = dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-    if (focusable.length < 2) return false;
+    if (!dialog) return { success: false, reason: 'Dialog not found' };
+
+    const candidates = Array.from(dialog.querySelectorAll('button:not([disabled]):not([aria-hidden="true"]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+    const focusable = candidates.filter(el => {
+      if (el.offsetParent === null && el.tagName !== 'BODY') {
+        const comp = window.getComputedStyle(el);
+        if (comp.display === 'none' || comp.visibility === 'hidden') return false;
+      }
+      return true;
+    });
+
+    if (focusable.length < 2) {
+      return { success: false, reason: 'Expected at least 2 focusable elements in dialog, found ' + focusable.length };
+    }
+
+    const first = focusable[0];
     const last = focusable[focusable.length - 1];
+
+    // Focus the last genuinely focusable element
     last.focus();
-    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
-    last.dispatchEvent(event);
-    return true;
+    if (document.activeElement !== last) {
+      return { success: false, reason: 'Failed to focus last element before Tab' };
+    }
+
+    // Dispatch bubbling, cancelable Tab event
+    const tabEvent = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      code: 'Tab',
+      keyCode: 9,
+      which: 9,
+      bubbles: true,
+      cancelable: true,
+      shiftKey: false,
+    });
+    const dispatchResult = last.dispatchEvent(tabEvent);
+
+    // Verify event was handled and default was prevented
+    if (dispatchResult || !tabEvent.defaultPrevented) {
+      return { success: false, reason: 'Tab event default navigation was not prevented' };
+    }
+
+    // Verify document.activeElement became the first focusable element
+    if (document.activeElement !== first) {
+      return {
+        success: false,
+        reason: 'Expected activeElement to be first element (' + (first.getAttribute('aria-label') || first.tagName) + '), got: ' + (document.activeElement?.getAttribute('aria-label') || document.activeElement?.tagName || 'null')
+      };
+    }
+
+    return { success: true };
   })()`);
-  console.log(`  -> Focus wrapping handler validated: ${tabWrapResult}`);
+
+  if (!forwardWrapResult.success) {
+    throw new Error(`Forward Tab wrap assertion failed: ${forwardWrapResult.reason}`);
+  }
+  console.log('  -> Forward Tab wrap verified: last element wrapped to first element and default navigation was prevented');
+
+  // Test backward Shift+Tab wrapping from first element to last element
+  const backwardWrapResult = await evalInBrowser(`(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    if (!dialog) return { success: false, reason: 'Dialog not found' };
+
+    const candidates = Array.from(dialog.querySelectorAll('button:not([disabled]):not([aria-hidden="true"]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+    const focusable = candidates.filter(el => {
+      if (el.offsetParent === null && el.tagName !== 'BODY') {
+        const comp = window.getComputedStyle(el);
+        if (comp.display === 'none' || comp.visibility === 'hidden') return false;
+      }
+      return true;
+    });
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    // Focus the first genuinely focusable element
+    first.focus();
+    if (document.activeElement !== first) {
+      return { success: false, reason: 'Failed to focus first element before Shift+Tab' };
+    }
+
+    // Dispatch bubbling, cancelable Shift+Tab event
+    const shiftTabEvent = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      code: 'Tab',
+      keyCode: 9,
+      which: 9,
+      bubbles: true,
+      cancelable: true,
+      shiftKey: true,
+    });
+    const dispatchResult = first.dispatchEvent(shiftTabEvent);
+
+    // Verify event was handled and default was prevented
+    if (dispatchResult || !shiftTabEvent.defaultPrevented) {
+      return { success: false, reason: 'Shift+Tab event default navigation was not prevented' };
+    }
+
+    // Verify document.activeElement became the last focusable element
+    if (document.activeElement !== last) {
+      return {
+        success: false,
+        reason: 'Expected activeElement to be last element (' + (last.getAttribute('aria-label') || last.tagName) + '), got: ' + (document.activeElement?.getAttribute('aria-label') || document.activeElement?.tagName || 'null')
+      };
+    }
+
+    return { success: true };
+  })()`);
+
+  if (!backwardWrapResult.success) {
+    throw new Error(`Backward Shift+Tab wrap assertion failed: ${backwardWrapResult.reason}`);
+  }
+  console.log('  -> Backward Shift+Tab wrap verified: first element wrapped to last element and default navigation was prevented');
 
   // Test Escape key close
   await evalInBrowser(`

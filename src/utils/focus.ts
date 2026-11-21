@@ -13,37 +13,68 @@ export const FOCUSABLE_SELECTOR = [
 
 /**
  * Checks whether an element is genuinely visible and focusable in the document.
- * Filters out hidden, disabled, collapsed, or display:none elements.
+ * Filters out hidden, disabled, collapsed, or display:none elements,
+ * including elements whose ancestors are hidden via aria-hidden, hidden, or display/visibility styling.
  */
-export function isElementFocusable(el: HTMLElement): boolean {
+export function isElementFocusable(el: HTMLElement, container?: HTMLElement | null): boolean {
   if (!el || typeof el.getAttribute !== 'function') return false;
 
-  // Check disabled and aria-hidden
+  // 1. Direct attribute checks on element itself
   if (el.hasAttribute('disabled')) return false;
   if (el.getAttribute('aria-hidden') === 'true') return false;
   if (el.hasAttribute('hidden')) return false;
 
-  // Check tabindex
+  // 2. Tabindex check on element itself
   const tabIndexAttr = el.getAttribute('tabindex');
   if (tabIndexAttr !== null && parseInt(tabIndexAttr, 10) < 0) {
     return false;
   }
 
-  // Check explicit style properties
+  // 3. Inline style check on element itself
   if (el.style) {
     if (el.style.display === 'none' || el.style.visibility === 'hidden') {
       return false;
     }
   }
 
-  // In browser environments with layout information:
+  // 4. Ancestor checks up to container (or document body)
+  let ancestor: HTMLElement | null = el.parentElement;
+  while (ancestor && ancestor !== container) {
+    if (ancestor.getAttribute && ancestor.getAttribute('aria-hidden') === 'true') {
+      return false;
+    }
+    if (ancestor.hasAttribute && ancestor.hasAttribute('hidden')) {
+      return false;
+    }
+    if (ancestor.style) {
+      if (ancestor.style.display === 'none' || ancestor.style.visibility === 'hidden') {
+        return false;
+      }
+    }
+    ancestor = ancestor.parentElement;
+  }
+
+  // 5. In live browser environments with layout / computed styles:
   if (typeof window !== 'undefined') {
+    // Check element layout and computed style
     if (el.offsetParent === null && el.tagName !== 'BODY' && el.style?.position !== 'fixed') {
       if (typeof window.getComputedStyle === 'function') {
         const computed = window.getComputedStyle(el);
         if (computed.display === 'none' || computed.visibility === 'hidden') {
           return false;
         }
+      }
+    }
+
+    // Check computed styles on ancestors up to container or body
+    if (typeof window.getComputedStyle === 'function') {
+      let cur: HTMLElement | null = el.parentElement;
+      while (cur && cur !== container && cur !== document.body) {
+        const comp = window.getComputedStyle(cur);
+        if (comp.display === 'none' || comp.visibility === 'hidden') {
+          return false;
+        }
+        cur = cur.parentElement;
       }
     }
   }
@@ -53,11 +84,12 @@ export function isElementFocusable(el: HTMLElement): boolean {
 
 /**
  * Returns an array of genuinely focusable, visible elements within a container.
+ * Excludes elements whose ancestors are hidden.
  */
 export function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
   if (!container || typeof container.querySelectorAll !== 'function') return [];
   const candidates = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
-  return candidates.filter(isElementFocusable);
+  return candidates.filter((el) => isElementFocusable(el, container));
 }
 
 /**
@@ -68,6 +100,7 @@ export function handleTabFocusWrap(
   container: HTMLElement | null
 ): boolean {
   if (e.key !== 'Tab') return false;
+  if (e.defaultPrevented) return true;
 
   const focusable = getFocusableElements(container);
   if (focusable.length === 0) {

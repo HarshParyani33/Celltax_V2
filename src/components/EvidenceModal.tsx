@@ -39,11 +39,13 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
       closeBtnRef.current?.focus();
     }, 30);
 
-    // 4. Global Escape key listener
+    // 4. Global Escape key and Tab focus wrap listener
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
         onCloseRef.current();
+      } else if (e.key === 'Tab') {
+        handleTabFocusWrap(e, modalRef.current);
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);

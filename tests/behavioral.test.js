@@ -93,13 +93,14 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
   });
 
   describe('EvidenceModal: Focus Management Utilities', () => {
-    it('isElementFocusable should correctly identify focusable vs inert elements', () => {
-      // Helper to create a minimal DOM element mock
-      const makeEl = (attrs = {}, style = {}) => ({
+    it('isElementFocusable should correctly identify focusable vs inert elements, including hidden ancestors', () => {
+      // Helper to create a minimal DOM element mock with optional parent hierarchy
+      const makeEl = (attrs = {}, style = {}, parent = null) => ({
         getAttribute: (k) => attrs[k] ?? null,
         hasAttribute: (k) => k in attrs,
         style,
         tabIndex: attrs.tabindex ? parseInt(attrs.tabindex, 10) : 0,
+        parentElement: parent,
       });
 
       // 1. Standard active button
@@ -122,6 +123,22 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
 
       // 7. Inline style visibility: hidden
       assert.strictEqual(isElementFocusable(makeEl({}, { visibility: 'hidden' })), false);
+
+      // 8. Element inside an aria-hidden ancestor
+      const ariaHiddenParent = makeEl({ 'aria-hidden': 'true' });
+      assert.strictEqual(isElementFocusable(makeEl({}, {}, ariaHiddenParent)), false);
+
+      // 9. Element inside a hidden-attribute ancestor
+      const hiddenAttrParent = makeEl({ hidden: '' });
+      assert.strictEqual(isElementFocusable(makeEl({}, {}, hiddenAttrParent)), false);
+
+      // 10. Element inside a display:none ancestor
+      const displayNoneParent = makeEl({}, { display: 'none' });
+      assert.strictEqual(isElementFocusable(makeEl({}, {}, displayNoneParent)), false);
+
+      // 11. Element inside a visibility:hidden ancestor
+      const visibilityHiddenParent = makeEl({}, { visibility: 'hidden' });
+      assert.strictEqual(isElementFocusable(makeEl({}, {}, visibilityHiddenParent)), false);
     });
 
     it('handleTabFocusWrap should correctly trap focus between boundary elements', () => {
@@ -131,6 +148,7 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
         hasAttribute: () => false,
         style: {},
         tabIndex: 0,
+        parentElement: null,
         focus: () => { focused = 'el1'; },
       };
       const el2 = {
@@ -138,6 +156,7 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
         hasAttribute: () => false,
         style: {},
         tabIndex: 0,
+        parentElement: null,
         focus: () => { focused = 'el2'; },
       };
 
@@ -152,6 +171,7 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
       const tabEvent = {
         key: 'Tab',
         shiftKey: false,
+        defaultPrevented: false,
         preventDefault: () => { prevented = true; },
       };
 
@@ -167,6 +187,7 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
       const shiftTabEvent = {
         key: 'Tab',
         shiftKey: true,
+        defaultPrevented: false,
         preventDefault: () => { prevented = true; },
       };
 
