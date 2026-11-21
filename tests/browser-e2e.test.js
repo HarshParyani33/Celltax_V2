@@ -397,12 +397,12 @@ run()
   })
   .finally(() => {
     if (ws) {
-      try { ws.close(); } catch {}
+      try { ws.close(); } catch { }
     }
     if (chromeProc) {
-      try { chromeProc.kill(); } catch {}
+      try { chromeProc.kill(); } catch { }
     }
     try {
       fs.rmSync(USER_DATA_DIR, { recursive: true, force: true });
-    } catch {}
+    } catch { }
   });
