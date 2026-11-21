@@ -6,21 +6,38 @@ export const ALL_EXHIBIT_IDS = ['ITEM-012-A', 'ITEM-012-B', 'ITEM-012-C'] as con
 export const TOTAL_EXHIBITS = ALL_EXHIBIT_IDS.length; // 3
 
 /**
- * In-memory fallback if localStorage is disabled, inaccessible, or throws (e.g. strict private browsing)
+ * In-memory fallback if localStorage is disabled, inaccessible, or throws SecurityError (e.g. strict private browsing or blocked storage)
  */
 let inMemoryProgression: string[] = [];
 
 /**
- * Tests whether localStorage is genuinely available and accessible.
+ * Safely accesses window.localStorage without throwing SecurityError if storage is blocked/restricted.
+ * Any property access like `window.localStorage` throws in strict sandboxes or blocked third-party storage contexts.
  */
-export function isLocalStorageAvailable(): boolean {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return false;
+export function getSafeLocalStorage(): Storage | null {
+  if (typeof window === 'undefined') {
+    return null;
   }
   try {
+    return window.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Tests whether localStorage is genuinely available and accessible.
+ * Wrapped in safe try/catch handling for property access and storage operations.
+ */
+export function isLocalStorageAvailable(): boolean {
+  try {
+    const storage = getSafeLocalStorage();
+    if (!storage) {
+      return false;
+    }
     const testKey = '__celltax_storage_probe__';
-    window.localStorage.setItem(testKey, '1');
-    window.localStorage.removeItem(testKey);
+    storage.setItem(testKey, '1');
+    storage.removeItem(testKey);
     return true;
   } catch {
     return false;
@@ -55,17 +72,19 @@ export function sanitizeExhibitIds(raw: string | null | undefined): string[] {
 
 /**
  * Safely reads and validates persisted inspected exhibit IDs from storage.
+ * - Safely accesses localStorage via getSafeLocalStorage() inside try/catch.
  * - If storage is available and key is unset (null), returns [] and syncs in-memory state to [].
  * - If storage is available and data exists, parses and deduplicates valid IDs.
  * - If storage throws or is genuinely unavailable, returns inMemoryProgression.
  */
 export function loadInspectedIds(): string[] {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return inMemoryProgression;
-  }
-
   try {
-    const raw = window.localStorage.getItem(PROGRESSION_STORAGE_KEY);
+    const storage = getSafeLocalStorage();
+    if (!storage) {
+      return inMemoryProgression;
+    }
+
+    const raw = storage.getItem(PROGRESSION_STORAGE_KEY);
     // When raw is null, the key was removed or never set. Storage IS available, so progression is 0.
     if (raw === null) {
       inMemoryProgression = [];
@@ -83,7 +102,7 @@ export function loadInspectedIds(): string[] {
 
 /**
  * Safely persists inspected exhibit IDs to localStorage with in-memory fallback.
- * Dispatches a custom event so other components in the same window update reactively.
+ * Every storage access and event dispatch is wrapped in try/catch handling.
  */
 export function saveInspectedIds(ids: string[]): boolean {
   const sanitized = Array.from(
@@ -92,18 +111,27 @@ export function saveInspectedIds(ids: string[]): boolean {
 
   inMemoryProgression = sanitized;
 
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return true;
+  let storageSucceeded = false;
+  try {
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      storage.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(sanitized));
+      storageSucceeded = true;
+    }
+  } catch {
+    // Disk write failed, but in-memory fallback is updated
+    storageSucceeded = false;
   }
 
   try {
-    window.localStorage.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(sanitized));
-    window.dispatchEvent(new CustomEvent('celltax-progression-change', { detail: sanitized }));
-    return true;
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('celltax-progression-change', { detail: sanitized }));
+    }
   } catch {
-    // Fallback updated even if disk write fails
-    return false;
+    // Ignore event dispatch errors
   }
+
+  return storageSucceeded;
 }
 
 /**
@@ -127,20 +155,26 @@ export function recordExhibitInspected(id: string): string[] {
 /**
  * Resets investigation progression back to zero.
  * Idempotent: safe to invoke repeatedly.
+ * Storage and event access wrapped in safe try/catch.
  */
 export function resetProgression(): void {
   inMemoryProgression = [];
 
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      window.localStorage.removeItem(PROGRESSION_STORAGE_KEY);
-    } catch {
-      // Ignore storage errors
+  try {
+    const storage = getSafeLocalStorage();
+    if (storage) {
+      storage.removeItem(PROGRESSION_STORAGE_KEY);
     }
+  } catch {
+    // Ignore storage errors
   }
 
-  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-    window.dispatchEvent(new CustomEvent('celltax-progression-change', { detail: [] }));
+  try {
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('celltax-progression-change', { detail: [] }));
+    }
+  } catch {
+    // Ignore event dispatch errors
   }
 }
 
@@ -225,6 +259,7 @@ export function getActiveTimelineConnections(inspectedIds: string[]): TimelineCo
  * - Updates to zero when another tab resets progression (StorageEvent.newValue === null or localStorage.clear()).
  * - Syncs when another tab inspects an exhibit.
  * - Dispatches and listens to custom events for immediate single-tab reactivity.
+ * - Entirely resilient to environments where window.localStorage access throws.
  */
 export function useProgression() {
   const [inspectedIds, setInspectedIds] = useState<string[]>(() => loadInspectedIds());
@@ -234,38 +269,54 @@ export function useProgression() {
     setInspectedIds(loadInspectedIds());
 
     const handleCustomChange = (e: Event) => {
-      const customEvent = e as CustomEvent<string[]>;
-      if (Array.isArray(customEvent.detail)) {
-        setInspectedIds(customEvent.detail);
-      } else {
+      try {
+        const customEvent = e as CustomEvent<string[]>;
+        if (Array.isArray(customEvent.detail)) {
+          setInspectedIds(customEvent.detail);
+        } else {
+          setInspectedIds(loadInspectedIds());
+        }
+      } catch {
         setInspectedIds(loadInspectedIds());
       }
     };
 
     const handleStorageChange = (e: StorageEvent) => {
-      // StorageEvent fires in other tabs/windows when localStorage changes.
-      // e.key === null indicates localStorage.clear() was called.
-      // e.key === PROGRESSION_STORAGE_KEY indicates our key was modified or removed.
-      if (e.key === PROGRESSION_STORAGE_KEY || e.key === null) {
-        if (e.newValue === null) {
-          // Another tab removed the key or cleared storage: reset current tab to 0 immediately!
-          inMemoryProgression = [];
-          setInspectedIds([]);
-        } else {
-          // Another tab updated the stored progression: sanitize and apply
-          const sanitized = sanitizeExhibitIds(e.newValue);
-          inMemoryProgression = sanitized;
-          setInspectedIds(sanitized);
+      try {
+        // StorageEvent fires in other tabs/windows when localStorage changes.
+        // e.key === null indicates localStorage.clear() was called.
+        // e.key === PROGRESSION_STORAGE_KEY indicates our key was modified or removed.
+        if (e.key === PROGRESSION_STORAGE_KEY || e.key === null) {
+          if (e.newValue === null) {
+            // Another tab removed the key or cleared storage: reset current tab to 0 immediately!
+            inMemoryProgression = [];
+            setInspectedIds([]);
+          } else {
+            // Another tab updated the stored progression: sanitize and apply
+            const sanitized = sanitizeExhibitIds(e.newValue);
+            inMemoryProgression = sanitized;
+            setInspectedIds(sanitized);
+          }
         }
+      } catch {
+        // Safe catch
       }
     };
 
-    window.addEventListener('celltax-progression-change', handleCustomChange);
-    window.addEventListener('storage', handleStorageChange);
+    try {
+      window.addEventListener('celltax-progression-change', handleCustomChange);
+      window.addEventListener('storage', handleStorageChange);
+    } catch {
+      // Event listener registration failure fallback
+    }
 
     return () => {
-      window.removeEventListener('celltax-progression-change', handleCustomChange);
-      window.removeEventListener('storage', handleStorageChange);
+      try {
+        window.removeEventListener('celltax-progression-change', handleCustomChange);
+        window.removeEventListener('storage', handleStorageChange);
+      } catch {
+        // Cleanup fallback
+      }
     };
   }, []);
 

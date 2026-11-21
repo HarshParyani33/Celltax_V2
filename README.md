@@ -96,9 +96,9 @@ The Department of Extraordinary Things is structured as a progressive narrative 
 
 ### Phase 3 Personal Memory Foundation & Privacy Architecture
 
-- **Structured Content Architecture (`src/types/memory.ts` & `src/data/memories.ts`):** Reusable typed content models supporting titles, short descriptions, full narratives, dates (including approximate periods), locations, primary/alternate images, categories (`milestone`, `voyage`, `curiosity`, `relic`, `personal`), timeline positions, captions, personal notes, display orders, and visibility states.
+- **Structured Content Architecture (`src/types/memory.ts` & `src/data/memories.ts`):** Reusable typed content models supporting titles, short descriptions, full narratives, dates (including approximate periods), locations, primary/alternate images, categories (`milestone`, `voyage`, `curiosity`, `relic`, `personal`, `celebration`), timeline positions, captions, personal notes, display orders, tags, and visibility states (`sealed`, `revealed`, `archived`).
 - **Public Repository Privacy Guarantee:** This public repository contains only generic archival placeholders. Real personal memories, private letters, intimate family photos, and dates are never committed to tracked public code or documentation.
-- **Private Content Strategy:** Full architectural documentation and deployment strategies (Client-Side Cryptographic Envelope via Web Crypto API, Private Repository Fork, or CI/CD Secret Injection) are detailed in [docs/private-content-strategy.md](file:///docs/private-content-strategy.md).
+- **Private Content Strategy:** Full architectural documentation and deployment strategies (Client-Side Cryptographic Envelope via Web Crypto API, Private Repository Fork, or CI/CD Secret Injection) are detailed in [docs/private-content-strategy.md](docs/private-content-strategy.md).
 
 ---
 

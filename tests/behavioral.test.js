@@ -545,6 +545,44 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
       assert.deepStrictEqual(recovered, ['ITEM-012-A']);
     });
 
+    it('should safely handle environments where accessing window.localStorage property itself throws SecurityError', async () => {
+      const {
+        getSafeLocalStorage,
+        isLocalStorageAvailable,
+        loadInspectedIds,
+        saveInspectedIds,
+        recordExhibitInspected,
+        resetProgression,
+      } = await import('../src/utils/progression.ts');
+
+      // Simulate restricted context (e.g. sandboxed iframe or blocked 3rd-party storage)
+      // where any property access to window.localStorage throws SecurityError immediately.
+      Object.defineProperty(globalThis.window, 'localStorage', {
+        get() {
+          throw new Error('SecurityError: Failed to read the localStorage property from Window: Access is denied.');
+        },
+        configurable: true,
+      });
+
+      // getSafeLocalStorage() and isLocalStorageAvailable() should catch and return null / false
+      assert.strictEqual(getSafeLocalStorage(), null);
+      assert.strictEqual(isLocalStorageAvailable(), false);
+
+      // resetProgression should not throw
+      resetProgression();
+      assert.deepStrictEqual(loadInspectedIds(), []);
+
+      // Saving and recording should operate using the in-memory fallback without throwing
+      saveInspectedIds(['ITEM-012-A']);
+      assert.deepStrictEqual(loadInspectedIds(), ['ITEM-012-A']);
+
+      recordExhibitInspected('ITEM-012-B');
+      assert.deepStrictEqual(loadInspectedIds(), ['ITEM-012-A', 'ITEM-012-B']);
+
+      resetProgression();
+      assert.deepStrictEqual(loadInspectedIds(), []);
+    });
+
     it('should enforce sequential discovery rules on timeline connections', async () => {
       const { getActiveTimelineConnections } = await import('../src/utils/progression.ts');
 
