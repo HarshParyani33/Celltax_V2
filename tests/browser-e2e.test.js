@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
@@ -6,45 +6,98 @@ import path from 'path';
 console.log('--- STARTING REAL BROWSER BEHAVIORAL E2E VERIFICATION ---');
 
 /**
- * Dynamically locate Chrome or Edge executable across standard installation paths.
+ * Dynamically and portably locate a Chromium-based browser (Chrome, Chromium, Edge)
+ * across environment variables, standard OS installation paths, and system PATH.
  */
 function findBrowserPath() {
-  const candidatePaths = [
+  // 1. Check explicit environment variables
+  const envCandidates = [
+    process.env.CHROME_BIN,
+    process.env.BROWSER_PATH,
+    process.env.EDGE_BIN,
+  ];
+  for (const envPath of envCandidates) {
+    if (envPath && fs.existsSync(envPath)) {
+      return envPath;
+    }
+  }
+
+  // 2. Check standard OS installation locations
+  const standardCandidates = [
+    // Windows
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
     path.join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe'),
     'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
     'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Edge\\Application\\msedge.exe'),
+    // macOS
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    // Linux
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/snap/bin/chromium',
   ];
 
-  for (const candidate of candidatePaths) {
+  for (const candidate of standardCandidates) {
     if (candidate && fs.existsSync(candidate)) {
       return candidate;
     }
   }
 
+  // 3. Search system PATH via where.exe (Windows) or which (Unix/macOS)
+  const isWin = process.platform === 'win32';
+  const pathCommands = isWin
+    ? ['where.exe chrome', 'where.exe msedge']
+    : ['which google-chrome', 'which google-chrome-stable', 'which chromium', 'which chromium-browser', 'which msedge'];
+
+  for (const cmd of pathCommands) {
+    try {
+      const stdout = execSync(cmd, { stdio: ['pipe', 'pipe', 'ignore'], encoding: 'utf8' }).trim();
+      const firstLine = stdout.split(/\r?\n/)[0]?.trim();
+      if (firstLine && fs.existsSync(firstLine)) {
+        return firstLine;
+      }
+    } catch {
+      // Command failed or executable not in PATH, proceed to next
+    }
+  }
+
+  // If no browser is found, fail with actionable instructions (never silently skip!)
   throw new Error(
-    `No supported Chromium browser found. Checked Chrome and Edge paths:\n${candidatePaths.join('\n')}`
+    'No supported Chromium browser found.\n' +
+    'Checked CHROME_BIN / BROWSER_PATH environment variables, standard OS installation paths, and system PATH.\n' +
+    'Please install Google Chrome, Chromium, or Microsoft Edge, or define CHROME_BIN pointing to the executable.'
   );
 }
 
 /**
- * Check if the preview or dev server is responding on http://localhost:5173
+ * Validates that the dev/preview server is running and actively returning successful HTTP 200-399 responses.
  */
 function checkServerReady(port = 5173, timeoutMs = 8000) {
   const start = Date.now();
   return new Promise((resolve, reject) => {
     function ping() {
       const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
-        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 400) {
+        res.resume(); // Drain incoming socket data
+        const status = res.statusCode || 0;
+        if (status >= 200 && status < 400) {
           resolve(true);
         } else {
-          resolve(true); // Server is answering
+          if (Date.now() - start > timeoutMs) {
+            reject(new Error(`Server responded with unexpected HTTP status ${status} at http://127.0.0.1:${port}/`));
+          } else {
+            setTimeout(ping, 300);
+          }
         }
       });
       req.on('error', (err) => {
         if (Date.now() - start > timeoutMs) {
-          reject(new Error(`Dev server not running on http://localhost:${port}/ (${err.message})`));
+          reject(new Error(`Dev server not reachable on http://127.0.0.1:${port}/ (${err.message})`));
         } else {
           setTimeout(ping, 300);
         }
@@ -64,6 +117,8 @@ let ws = null;
 let messageId = 1;
 const pendingRequests = new Map();
 const consoleErrors = [];
+const pageExceptions = [];
+const failedNetworkRequests = [];
 
 function cdpSend(method, params = {}) {
   return new Promise((resolve, reject) => {
@@ -118,12 +173,12 @@ async function run() {
     fs.mkdirSync(screenshotDir, { recursive: true });
   }
 
-  // Check preview/dev server pre-flight
+  // 1. Check preview/dev server pre-flight HTTP response
   console.log(`[E2E 1/9] Checking preview server readiness on port 5173...`);
   await checkServerReady(5173);
-  console.log('  -> Server is ready and answering on http://localhost:5173');
+  console.log('  -> Server is ready and answering with HTTP 200-399 on http://localhost:5173');
 
-  // Launch browser with CDP debugging port
+  // 2. Launch browser with CDP debugging port
   console.log(`[E2E 2/9] Launching Chromium browser (${BROWSER_PATH}) on port ${DEBUG_PORT}...`);
   chromeProc = spawn(BROWSER_PATH, [
     '--headless=new',
@@ -152,11 +207,24 @@ async function run() {
         const errorText = msg.params.args.map((a) => a.value || a.description || JSON.stringify(a)).join(' ');
         consoleErrors.push(errorText);
       }
+    } else if (msg.method === 'Runtime.exceptionThrown') {
+      const desc = msg.params.exceptionDetails?.exception?.description || msg.params.exceptionDetails?.text || 'Uncaught page exception';
+      pageExceptions.push(desc);
+    } else if (msg.method === 'Network.loadingFailed') {
+      if (!msg.params.canceled && msg.params.type !== 'Ping') {
+        failedNetworkRequests.push(`${msg.params.type || 'Resource'} failed: ${msg.params.errorText}`);
+      }
+    } else if (msg.method === 'Network.responseReceived') {
+      const status = msg.params.response?.status;
+      if (status && status >= 400) {
+        failedNetworkRequests.push(`HTTP ${status} on ${msg.params.response.url}`);
+      }
     }
   };
 
   await cdpSend('Runtime.enable');
   await cdpSend('Page.enable');
+  await cdpSend('Network.enable');
 
   await cdpSend('Page.navigate', { url: 'http://localhost:5173/' });
   await wait(1200);
@@ -381,12 +449,18 @@ async function run() {
   fs.writeFileSync(path.join(screenshotDir, 'mobile_evidence_archive.png'), Buffer.from(mobileScreenshot.data, 'base64'));
   console.log('  -> Mobile layout verified (No overflow, screenshot saved to public/screenshots/mobile_evidence_archive.png)');
 
-  // Fail on unexpected console errors
+  // Assertions on console errors, uncaught exceptions, and failed network requests
   if (consoleErrors.length > 0) {
     throw new Error(`Unexpected console errors encountered during test session:\n${consoleErrors.join('\n')}`);
   }
-  console.log('  -> Zero console errors detected during entire run');
+  if (pageExceptions.length > 0) {
+    throw new Error(`Uncaught page exceptions encountered during test session:\n${pageExceptions.join('\n')}`);
+  }
+  if (failedNetworkRequests.length > 0) {
+    throw new Error(`Failed network resource requests encountered during test session:\n${failedNetworkRequests.join('\n')}`);
+  }
 
+  console.log('  -> Zero console errors, page exceptions, or failed network requests detected');
   console.log('\n--- ALL REAL BROWSER BEHAVIORAL E2E TESTS PASSED SUCCESSFULLY! ---');
 }
 
@@ -397,12 +471,12 @@ run()
   })
   .finally(() => {
     if (ws) {
-      try { ws.close(); } catch { }
+      try { ws.close(); } catch {}
     }
     if (chromeProc) {
-      try { chromeProc.kill(); } catch { }
+      try { chromeProc.kill(); } catch {}
     }
     try {
       fs.rmSync(USER_DATA_DIR, { recursive: true, force: true });
-    } catch { }
+    } catch {}
   });

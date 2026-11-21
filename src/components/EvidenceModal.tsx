@@ -4,6 +4,7 @@ import { X, Search, FileText, AlertCircle, Compass } from 'lucide-react';
 import { EvidenceItem } from '../types';
 import { soundFx } from '../utils/audio';
 import { usePrefersReducedMotion } from '../utils/animations';
+import { handleTabFocusWrap, restoreFocusSafely } from '../utils/focus';
 
 interface EvidenceModalProps {
   item: EvidenceItem;
@@ -63,44 +64,13 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
       document.body.style.overflow = originalOverflow;
 
       // 6. Safely restore focus to the original triggering element if still connected to the DOM
-      const trigger = previousFocusRef.current;
-      if (trigger && document.body.contains(trigger) && typeof trigger.focus === 'function') {
-        try {
-          trigger.focus();
-        } catch {
-          // Gracefully ignore focus errors on detached/unfocusable targets
-        }
-      }
+      restoreFocusSafely(previousFocusRef.current);
     };
   }, []);
 
   // Focus trap implementation: handles Tab and Shift+Tab wrapping within the dialog
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Tab') {
-      const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      );
-      if (!focusable || focusable.length === 0) {
-        e.preventDefault();
-        modalRef.current?.focus();
-        return;
-      }
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first || !modalRef.current?.contains(document.activeElement)) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last || !modalRef.current?.contains(document.activeElement)) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    }
+    handleTabFocusWrap(e, modalRef.current);
   };
 
   return (

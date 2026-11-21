@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldAlert, ArrowRight, CheckCircle2, Lock, Terminal, Key, FastForward } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { getPageTransition, usePrefersReducedMotion } from '../utils/animations';
+import { validateClearanceCode } from '../utils/credentials';
+import { createTimerTracker } from '../utils/timers';
 
 const TERMINAL_LINES = [
   "INITIALIZING CLASSIFIED ARCHIVE PROTOCOL...",
@@ -14,21 +16,6 @@ const TERMINAL_LINES = [
   "CASE NO. 012",
   "A new investigation has been assigned to you.",
   "Enter your access credential."
-];
-
-// Valid investigation clearance designations (client-side verification gate)
-const ACCEPTED_CODES = [
-  "EXTRAORDINARY",
-  "012",
-  "CASE012",
-  "CASE 012",
-  "CONFIDENTIAL",
-  "ARCHIVE",
-  "AGENT",
-  "DIRECTIVE12",
-  "INVESTIGATOR",
-  "OPEN",
-  "START"
 ];
 
 export const AccessTerminal: React.FC = () => {
@@ -42,27 +29,8 @@ export const AccessTerminal: React.FC = () => {
   const [isGranted, setIsGranted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // References for reliable teardown of active intervals & timeouts
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  const addSafeTimeout = (fn: () => void, delayMs: number) => {
-    const id = setTimeout(() => {
-      timeoutsRef.current = timeoutsRef.current.filter((t) => t !== id);
-      fn();
-    }, delayMs);
-    timeoutsRef.current.push(id);
-    return id;
-  };
-
-  const clearAllTimers = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    timeoutsRef.current.forEach(clearTimeout);
-    timeoutsRef.current = [];
-  };
+  // Reusable timer tracker for reliable teardown of active intervals & timeouts
+  const timersRef = useRef(createTimerTracker());
 
   // Typewriter line sequencing with clean interval cancellation for React Strict Mode
   useEffect(() => {
@@ -70,36 +38,33 @@ export const AccessTerminal: React.FC = () => {
     setDisplayedLines([]);
     setIsTypingComplete(false);
 
-    intervalRef.current = setInterval(() => {
+    timersRef.current.setInterval(() => {
       if (lineIdx < TERMINAL_LINES.length) {
         const nextLine = TERMINAL_LINES[lineIdx];
         setDisplayedLines((prev) => [...prev, nextLine]);
         soundFx.playKeypress();
         lineIdx++;
       } else {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
+        timersRef.current.clearAll();
         setIsTypingComplete(true);
-        addSafeTimeout(() => {
+        timersRef.current.addTimeout(() => {
           inputRef.current?.focus();
         }, 80);
       }
     }, 220);
 
     return () => {
-      clearAllTimers();
+      timersRef.current.clearAll();
     };
   }, []);
 
   // Skip intro immediately stops the interval and clears any pending timers
   const handleSkipIntro = () => {
     soundFx.playKeypress();
-    clearAllTimers();
+    timersRef.current.clearAll();
     setDisplayedLines(TERMINAL_LINES);
     setIsTypingComplete(true);
-    addSafeTimeout(() => {
+    timersRef.current.addTimeout(() => {
       inputRef.current?.focus();
     }, 40);
   };
@@ -118,14 +83,14 @@ export const AccessTerminal: React.FC = () => {
     setIsAuthenticating(true);
     soundFx.playKeypress();
 
-    addSafeTimeout(() => {
-      if (ACCEPTED_CODES.includes(cleanCode)) {
+    timersRef.current.addTimeout(() => {
+      if (validateClearanceCode(cleanCode)) {
         setIsGranted(true);
         setErrorState(null);
         soundFx.playAccessGranted();
 
-        // Smooth transition to briefing after authentication reveal
-        addSafeTimeout(() => {
+        // Smooth transition to briefing after clearance reveal
+        timersRef.current.addTimeout(() => {
           navigate('/briefing');
         }, 1300);
       } else {

@@ -8,12 +8,12 @@
 
 ## Overview
 
-**The Department of Extraordinary Things** (Case No. 012) is an interactive confidential dossier experience. Investigators authenticate through a secured terminal node, decrypt classified directives, and conduct forensic examinations of anomalous recovered artefacts.
+**The Department of Extraordinary Things** (Case No. 012) is an interactive confidential dossier experience. Investigators enter through an atmospheric narrative terminal node, decrypt classified directives, and conduct forensic examinations of anomalous recovered artefacts.
 
 The project blends atmospheric narrative design, tactile mechanical soundscapes, and editorial archival visual hierarchies with modern web engineering discipline.
 
 > [!NOTE]
-> **Fictional Gate Disclosure**: The Access Terminal is an interactive narrative gate designed purely for theatrical and cinematic immersion. Clearance verification is performed entirely on the client side using credentials contained in frontend source code (`012`, `EXTRAORDINARY`, `CASE012`, etc.). This mechanism does not represent secure server authentication, cryptographic access control, or protected storage.
+> **Narrative Experience Disclosure**: This application is a fictional, cinematic narrative experience, not real authentication. The Access Terminal is an interactive fictional gate designed purely for theatrical storytelling and immersion. Clearance verification is performed entirely on the client side using credentials contained in frontend source code (`012`, `EXTRAORDINARY`, `CASE012`, etc.). This mechanism must not be used or represented as secure server authentication, cryptographic access control, or protected storage.
 
 ---
 
@@ -25,8 +25,8 @@ Phase 1 establishes the core engineering foundation and the first three confiden
 - **Atmospheric Terminal Node:** CRT scanlines, subtle radial vignettes, and paced typewriter text reveal.
 - **Interactive Controls:** "Skip Intro" control immediately drains typing intervals and reveals the clearance input.
 - **Narrative Gate Clearance:** Validates clearance inputs with clear accessible error alerts (`[role="alert"]`) and tactile keyboard feedback.
-- **Accepted Codes:** Accepts `EXTRAORDINARY`, `012`, `CASE012`, `CASE 012`, `CONFIDENTIAL`, `ARCHIVE`, `AGENT`, `DIRECTIVE12`, `INVESTIGATOR`, `OPEN`, `START`.
-- **Authentication Sequence:** Decryption animation, auditory chime feedback, and seamless transition into the briefing room.
+- **Accepted Codes:** Accepts `EXTRAORDINARY`, `012`, `CASE012`, `CASE 012`, `CONFIDENTIAL`, `ARCHIVE`, `AGENT`, `DIRECTIVE12`, `INVESTIGATOR`, `OPEN`, `START` via shared pure validator (`validateClearanceCode`).
+- **Fictional Clearance Sequence:** Decryption animation, auditory chime feedback, and seamless transition into the briefing room.
 
 ### 2. Screen B: Case Briefing (`/briefing`)
 - **Confidential Case Dossier:** Archival paper aesthetic, official classification stamps (`TOP SECRET // ULTRA`), and institutional crest.
@@ -46,7 +46,7 @@ Phase 1 establishes the core engineering foundation and the first three confiden
   3. **Item 012-C (Artefact):** Concentric brass astrolithic dial with astronomical markings.
 - **Detailed Inspection Overlay:** Modal dialog (`role="dialog"`, `aria-modal="true"`) featuring:
   - Initial focus containment on open.
-  - Tab and Shift+Tab focus trap wrapping.
+  - Tab and Shift+Tab focus trap wrapping (excluding hidden and disabled elements).
   - Escape key dismissal.
   - Safe focus restoration to the triggering card button.
   - Optical zoom preview, material specifications, forensic ledger observations, and anomalous markers.
@@ -97,7 +97,7 @@ celltax_v2/
 │   │   └── mobile_evidence_archive.png
 │   └── seal.svg                # Department vector crest & emblem
 ├── tests/
-│   ├── behavioral.test.js      # Behavioral unit tests (Node test runner, mock-free real module tests)
+│   ├── behavioral.test.js      # Direct module behavioral unit tests (Node test runner)
 │   ├── browser-e2e.test.js     # Real Chromium DevTools Protocol (CDP) end-to-end suite
 │   └── phase1-validation.js    # Architectural & integration validation checks
 ├── src/
@@ -107,7 +107,7 @@ celltax_v2/
 │   ├── styles/                 # Tailwind base layers, scanline textures, and scrollbars
 │   ├── tokens/                 # Investigation & Museum design tokens
 │   ├── types/                  # Strict TypeScript domain interfaces
-│   ├── utils/                  # Web Audio synthesis & animation variants
+│   ├── utils/                  # Web Audio, animations, credentials, timers, and focus helpers
 │   ├── App.tsx                 # Route coordinator & cinematic transition wrapper
 │   └── main.tsx                # Application entrypoint
 ├── index.html
@@ -157,5 +157,5 @@ Visit `http://localhost:5173` in your browser.
 All verifications are executed automatically:
 1. **TypeScript Typecheck:** `npm run typecheck` passes with zero errors under strict mode.
 2. **Production Build:** `npm run build` compiles clean bundles.
-3. **Behavioral Suite:** `npm test` exercises animation variants, audio states, skip-intro timers, modal traps, and data structures.
-4. **Real Browser CDP E2E:** `npm run test:e2e` validates the entire 3-screen progression, skip-intro line stability, error alerts, modal focus trapping, Escape key closing, trigger focus restoration, mobile (390px) and desktop (1440px) viewport overflow, and image rendering.
+3. **Behavioral Suite:** `npm test` runs Node test runner against actual module exports (`src/utils/credentials.ts`, `src/utils/timers.ts`, `src/utils/focus.ts`, `src/utils/animations.ts`, `src/utils/audio.ts`, `src/data/evidence.ts`) verifying clearance validation, timer tracking lifecycles, focus-trap element filtering and wrapping boundaries, reduced-motion invariants, audio engine autoplay policies, and evidence catalog integrity. Distinguishes direct module tests from manually simulated behavior.
+4. **Real Browser CDP E2E:** `npm run test:e2e` validates the entire 3-screen progression, skip-intro line stability, error alerts, modal focus trapping, Escape key closing, trigger focus restoration, mobile (390px) and desktop (1440px) viewport overflow, image rendering, and asserts zero console errors, zero uncaught page exceptions, and zero failed network requests.
