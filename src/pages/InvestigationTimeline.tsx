@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, 
   CheckCircle2, 
@@ -12,7 +12,11 @@ import {
   Unlock, 
   Layers, 
   Compass,
-  Eye
+  Eye,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  FileText
 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -20,6 +24,7 @@ import { EVIDENCE_COLLECTION } from '../data/evidence';
 import { useProgression } from '../utils/progression';
 import { soundFx } from '../utils/audio';
 import { getPageTransition, usePrefersReducedMotion } from '../utils/animations';
+import { getMemoriesForExhibit } from '../data/memories';
 
 interface ChronoNode {
   item: typeof EVIDENCE_COLLECTION[number];
@@ -71,8 +76,16 @@ const CHRONO_NODES: ChronoNode[] = [
 export const InvestigationTimeline: React.FC = () => {
   const navigate = useNavigate();
   const shouldReduceMotion = usePrefersReducedMotion();
-  const { inspectedIds, hasInspected, isUnlocked, percentage, remainingIds } = useProgression();
+  const { inspectedIds, hasInspected, isUnlocked, percentage, remainingIds, connections } = useProgression();
   const remaining = EVIDENCE_COLLECTION.filter((item) => remainingIds.includes(item.id));
+
+  // Expandable memory details state for Phase 3 milestone records
+  const [expandedNodeId, setExpandedNodeId] = useState<string | null>(null);
+
+  const toggleNodeExpansion = (nodeId: string) => {
+    soundFx.playKeypress();
+    setExpandedNodeId((prev) => (prev === nodeId ? null : nodeId));
+  };
 
   return (
     <motion.div
@@ -144,6 +157,8 @@ export const InvestigationTimeline: React.FC = () => {
             {CHRONO_NODES.map((node, index) => {
               const isExamined = hasInspected(node.item.id);
               const isEven = index % 2 === 0;
+              const isExpanded = expandedNodeId === node.item.id;
+              const memories = getMemoriesForExhibit(node.item.id);
 
               return (
                 <div
@@ -239,6 +254,75 @@ export const InvestigationTimeline: React.FC = () => {
                           </p>
                         </div>
                       </div>
+
+                      {/* Phase 3: Expandable Memory Milestone Details */}
+                      <div className="mt-4 pt-3 border-t border-investigation-border/40">
+                        <button
+                          type="button"
+                          onClick={() => toggleNodeExpansion(node.item.id)}
+                          aria-expanded={isExpanded}
+                          aria-controls={`memory-panel-${node.item.id}`}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded bg-investigation-card/80 hover:bg-investigation-card border border-investigation-border/60 text-xs font-mono text-brass-light hover:text-brass transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-brass"
+                        >
+                          <span className="flex items-center space-x-2">
+                            <FileText className="w-3.5 h-3.5 text-brass" />
+                            <span>{isExpanded ? 'CONCEAL ARCHIVAL MEMORY LOG' : 'EXPAND ARCHIVAL MEMORY LOG'}</span>
+                          </span>
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              id={`memory-panel-${node.item.id}`}
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: shouldReduceMotion ? 0.01 : 0.3 }}
+                              className="overflow-hidden mt-3 space-y-3 pt-2"
+                            >
+                              {memories.map((mem) => (
+                                <div
+                                  key={mem.id}
+                                  className="p-3.5 rounded bg-investigation-base/90 border border-brass/30 space-y-2 text-xs font-sans"
+                                >
+                                  <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-investigation-border/40">
+                                    <span className="font-serif font-bold text-parchment text-sm">{mem.title}</span>
+                                    <div className="flex items-center space-x-2 text-[10px] font-mono">
+                                      {mem.isApproximateDate && (
+                                        <span className="px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-600/40 text-amber-300">
+                                          APPROXIMATE ERA
+                                        </span>
+                                      )}
+                                      <span className="text-investigation-muted">{mem.displayDate || mem.date}</span>
+                                    </div>
+                                  </div>
+
+                                  <p className="text-investigation-text/90 leading-relaxed text-xs">
+                                    {mem.fullNarrative}
+                                  </p>
+
+                                  {mem.personalNote && (
+                                    <div className="p-2 rounded bg-investigation-forest/60 border border-investigation-border/60 text-[11px] font-serif italic text-brass-light/90">
+                                      "{mem.personalNote}"
+                                    </div>
+                                  )}
+
+                                  <div className="flex items-center justify-between pt-1 text-[10px] font-mono text-investigation-muted">
+                                    {mem.location && (
+                                      <span className="flex items-center space-x-1">
+                                        <MapPin className="w-3 h-3 text-brass" />
+                                        <span>{mem.location}</span>
+                                      </span>
+                                    )}
+                                    <span className="uppercase text-brass-dark">{mem.category}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </motion.div>
                   </div>
 
@@ -263,46 +347,46 @@ export const InvestigationTimeline: React.FC = () => {
         <div className="my-10 p-6 sm:p-8 rounded-lg border border-brass/40 bg-investigation-surface/90 shadow-dossier">
           <div className="flex items-center space-x-2 text-xs font-mono text-brass uppercase tracking-widest mb-3">
             <Compass className="w-4 h-4 text-brass" />
-            <span>PROGRESSIVE TIMELINE CORROBORATION</span>
+            <span>PROGRESSIVE TIMELINE CORROBORATION // SEQUENTIAL DISCOVERY</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono mt-4">
-            {/* Tier 1 Link */}
-            <div className={`p-4 rounded border ${hasInspected('ITEM-012-A') ? 'bg-investigation-card border-brass/50 text-parchment' : 'bg-investigation-forest/40 border-investigation-border text-investigation-muted'}`}>
+            {/* Tier 1 Link: Activated when Item 012-A is inspected */}
+            <div className={`p-4 rounded border ${connections.link1Active ? 'bg-investigation-card border-brass/50 text-parchment' : 'bg-investigation-forest/40 border-investigation-border text-investigation-muted'}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-brass-light">LINK 1: THE TOWER (1978)</span>
-                {hasInspected('ITEM-012-A') ? <CheckCircle2 className="w-4 h-4 text-brass" /> : <Lock className="w-3.5 h-3.5" />}
+                {connections.link1Active ? <CheckCircle2 className="w-4 h-4 text-brass" /> : <Lock className="w-3.5 h-3.5" />}
               </div>
               <p className="font-sans text-xs leading-relaxed text-investigation-text/80">
-                {hasInspected('ITEM-012-A')
+                {connections.link1Active
                   ? 'Establishes the physical origin point at Sector 7. The observatory lens is aligned to capture the exact solstice twilight.'
                   : 'Pending forensic inspection of Item 012-A.'}
               </p>
             </div>
 
-            {/* Tier 2 Link */}
-            <div className={`p-4 rounded border ${hasInspected('ITEM-012-A') && hasInspected('ITEM-012-B') ? 'bg-investigation-card border-brass/50 text-parchment' : 'bg-investigation-forest/40 border-investigation-border text-investigation-muted'}`}>
+            {/* Tier 2 Link: Activated sequentially when Item 012-A and Item 012-B are inspected */}
+            <div className={`p-4 rounded border ${connections.link2Active ? 'bg-investigation-card border-brass/50 text-parchment' : 'bg-investigation-forest/40 border-investigation-border text-investigation-muted'}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-brass-light">LINK 2: THE DISPATCH (1988)</span>
-                {hasInspected('ITEM-012-A') && hasInspected('ITEM-012-B') ? <CheckCircle2 className="w-4 h-4 text-brass" /> : <Lock className="w-3.5 h-3.5" />}
+                {connections.link2Active ? <CheckCircle2 className="w-4 h-4 text-brass" /> : <Lock className="w-3.5 h-3.5" />}
               </div>
               <p className="font-sans text-xs leading-relaxed text-investigation-text/80">
-                {hasInspected('ITEM-012-A') && hasInspected('ITEM-012-B')
+                {connections.link2Active
                   ? 'Corroborates the observatory coordinates with personal cipher dispatches. Hand-penned in archival iron gall ink.'
-                  : 'Requires inspection of both Item 012-A and Item 012-B.'}
+                  : 'Requires sequential inspection of Item 012-A and Item 012-B.'}
               </p>
             </div>
 
-            {/* Tier 3 Link */}
-            <div className={`p-4 rounded border ${isUnlocked ? 'bg-investigation-card border-brass text-parchment' : 'bg-investigation-forest/40 border-investigation-border text-investigation-muted'}`}>
+            {/* Tier 3 Link: Activated only when all three exhibits are inspected */}
+            <div className={`p-4 rounded border ${connections.link3Active ? 'bg-investigation-card border-brass text-parchment' : 'bg-investigation-forest/40 border-investigation-border text-investigation-muted'}`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-brass-light">LINK 3: THE DIAL (CONVERGENCE)</span>
-                {isUnlocked ? <CheckCircle2 className="w-4 h-4 text-brass" /> : <Lock className="w-3.5 h-3.5" />}
+                {connections.link3Active ? <CheckCircle2 className="w-4 h-4 text-brass" /> : <Lock className="w-3.5 h-3.5" />}
               </div>
               <p className="font-sans text-xs leading-relaxed text-investigation-text/80">
-                {isUnlocked
+                {connections.link3Active
                   ? 'Complete synthesis achieved! Concentric brass mechanics lock the timeline to the milestone celebration date.'
-                  : 'Requires inspection of all three exhibits.'}
+                  : 'Requires inspection of all three exhibits (Item 012-A, 012-B, and 012-C).'}
               </p>
             </div>
           </div>

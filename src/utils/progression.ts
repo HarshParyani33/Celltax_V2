@@ -6,61 +6,21 @@ export const ALL_EXHIBIT_IDS = ['ITEM-012-A', 'ITEM-012-B', 'ITEM-012-C'] as con
 export const TOTAL_EXHIBITS = ALL_EXHIBIT_IDS.length; // 3
 
 /**
- * In-memory fallback if localStorage is disabled or unavailable (e.g. private browsing, sandbox)
+ * In-memory fallback if localStorage is disabled, inaccessible, or throws (e.g. strict private browsing)
  */
 let inMemoryProgression: string[] = [];
 
 /**
- * Safely reads and validates persisted inspected exhibit IDs from storage.
- * Handles malformed JSON, storage exceptions, and filters to recognized exhibit IDs.
+ * Tests whether localStorage is genuinely available and accessible.
  */
-export function loadInspectedIds(): string[] {
-  if (typeof window === 'undefined') {
-    return inMemoryProgression;
+export function isLocalStorageAvailable(): boolean {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return false;
   }
-
   try {
-    const raw = window.localStorage.getItem(PROGRESSION_STORAGE_KEY);
-    if (!raw) {
-      return inMemoryProgression;
-    }
-
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    // Filter only valid known IDs and deduplicate
-    const validIds = Array.from(
-      new Set(parsed.filter((id): id is string => typeof id === 'string' && (ALL_EXHIBIT_IDS as readonly string[]).includes(id)))
-    );
-
-    inMemoryProgression = validIds;
-    return validIds;
-  } catch {
-    return inMemoryProgression;
-  }
-}
-
-/**
- * Safely persists inspected exhibit IDs to localStorage with in-memory fallback.
- */
-export function saveInspectedIds(ids: string[]): boolean {
-  // Deduplicate and filter to known IDs
-  const sanitized = Array.from(
-    new Set(ids.filter((id) => typeof id === 'string' && (ALL_EXHIBIT_IDS as readonly string[]).includes(id)))
-  );
-
-  inMemoryProgression = sanitized;
-
-  if (typeof window === 'undefined') {
-    return true;
-  }
-
-  try {
-    window.localStorage.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(sanitized));
-    // Dispatch custom event so other components/tabs can react immediately
-    window.dispatchEvent(new CustomEvent('celltax-progression-change', { detail: sanitized }));
+    const testKey = '__celltax_storage_probe__';
+    window.localStorage.setItem(testKey, '1');
+    window.localStorage.removeItem(testKey);
     return true;
   } catch {
     return false;
@@ -68,10 +28,89 @@ export function saveInspectedIds(ids: string[]): boolean {
 }
 
 /**
- * Records an exhibit as inspected. Avoids duplicates.
+ * Pure sanitizer: parses and filters a raw JSON string into a deduplicated list of valid exhibit IDs.
+ * Returns empty array if raw is null, empty, malformed, or contains no valid IDs.
+ */
+export function sanitizeExhibitIds(raw: string | null | undefined): string[] {
+  if (!raw || typeof raw !== 'string') {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    // Filter to known valid IDs and deduplicate
+    return Array.from(
+      new Set(
+        parsed.filter((id): id is string =>
+          typeof id === 'string' && (ALL_EXHIBIT_IDS as readonly string[]).includes(id)
+        )
+      )
+    );
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Safely reads and validates persisted inspected exhibit IDs from storage.
+ * - If storage is available and key is unset (null), returns [] and syncs in-memory state to [].
+ * - If storage is available and data exists, parses and deduplicates valid IDs.
+ * - If storage throws or is genuinely unavailable, returns inMemoryProgression.
+ */
+export function loadInspectedIds(): string[] {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return inMemoryProgression;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(PROGRESSION_STORAGE_KEY);
+    // When raw is null, the key was removed or never set. Storage IS available, so progression is 0.
+    if (raw === null) {
+      inMemoryProgression = [];
+      return [];
+    }
+
+    const validIds = sanitizeExhibitIds(raw);
+    inMemoryProgression = validIds;
+    return validIds;
+  } catch {
+    // If storage is blocked/throws, use the in-memory fallback
+    return inMemoryProgression;
+  }
+}
+
+/**
+ * Safely persists inspected exhibit IDs to localStorage with in-memory fallback.
+ * Dispatches a custom event so other components in the same window update reactively.
+ */
+export function saveInspectedIds(ids: string[]): boolean {
+  const sanitized = Array.from(
+    new Set(ids.filter((id) => typeof id === 'string' && (ALL_EXHIBIT_IDS as readonly string[]).includes(id)))
+  );
+
+  inMemoryProgression = sanitized;
+
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return true;
+  }
+
+  try {
+    window.localStorage.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(sanitized));
+    window.dispatchEvent(new CustomEvent('celltax-progression-change', { detail: sanitized }));
+    return true;
+  } catch {
+    // Fallback updated even if disk write fails
+    return false;
+  }
+}
+
+/**
+ * Records an exhibit as inspected. Idempotent and duplicate-preventing.
  */
 export function recordExhibitInspected(id: string): string[] {
-  if (!(ALL_EXHIBIT_IDS as readonly string[]).includes(id)) {
+  if (!(ALL_EXHIBIT_IDS as readonly string[]).includes(id as any)) {
     return loadInspectedIds();
   }
 
@@ -87,17 +126,21 @@ export function recordExhibitInspected(id: string): string[] {
 
 /**
  * Resets investigation progression back to zero.
+ * Idempotent: safe to invoke repeatedly.
  */
 export function resetProgression(): void {
   inMemoryProgression = [];
 
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && window.localStorage) {
     try {
       window.localStorage.removeItem(PROGRESSION_STORAGE_KEY);
-      window.dispatchEvent(new CustomEvent('celltax-progression-change', { detail: [] }));
     } catch {
       // Ignore storage errors
     }
+  }
+
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent('celltax-progression-change', { detail: [] }));
   }
 }
 
@@ -111,7 +154,7 @@ export function isGalleryUnlocked(inspectedIds: string[]): boolean {
 }
 
 /**
- * Calculates progression completion percentage.
+ * Calculates progression completion percentage (0 - 100).
  */
 export function calculateProgressionPercentage(inspectedIds: string[]): number {
   if (!Array.isArray(inspectedIds)) return 0;
@@ -127,24 +170,61 @@ export function getRemainingExhibitIds(inspectedIds: string[]): string[] {
   return ALL_EXHIBIT_IDS.filter((id) => !inspectedIds.includes(id));
 }
 
+export interface TimelineConnections {
+  tier1Provenance: boolean;
+  tier2Correspondence: boolean;
+  tier3UnifiedSynthesis: boolean;
+  totalInspected: number;
+  link1Active: boolean;
+  link2Active: boolean;
+  link3Active: boolean;
+}
+
 /**
- * Evaluates active narrative connection tiers based on inspected items.
+ * Evaluates active narrative connection tiers based on sequential discovery rules:
+ * - Link 1 / Tier 1 (Temporal Alignment): Activates after inspecting the first relevant exhibit (ITEM-012-A: Coastal Observatory).
+ * - Link 2 / Tier 2 (Provenance Correlation): Activates sequentially after inspecting both the first and second exhibits (ITEM-012-A and ITEM-012-B: Dispatch Folio).
+ * - Link 3 / Tier 3 (Unified Synthesis / Convergence): Activates only after all three exhibits (ITEM-012-A, ITEM-012-B, and ITEM-012-C) are inspected.
  */
-export function getActiveTimelineConnections(inspectedIds: string[]) {
+export function getActiveTimelineConnections(inspectedIds: string[]): TimelineConnections {
+  if (!Array.isArray(inspectedIds)) {
+    return {
+      tier1Provenance: false,
+      tier2Correspondence: false,
+      tier3UnifiedSynthesis: false,
+      totalInspected: 0,
+      link1Active: false,
+      link2Active: false,
+      link3Active: false,
+    };
+  }
+
   const hasA = inspectedIds.includes('ITEM-012-A');
   const hasB = inspectedIds.includes('ITEM-012-B');
   const hasC = inspectedIds.includes('ITEM-012-C');
 
+  const tier1 = hasA;
+  const tier2 = hasA && hasB;
+  const tier3 = hasA && hasB && hasC;
+  const total = [hasA, hasB, hasC].filter(Boolean).length;
+
   return {
-    tier1Provenance: hasA,
-    tier2Correspondence: hasA && hasB,
-    tier3UnifiedSynthesis: hasA && hasB && hasC,
-    totalInspected: [hasA, hasB, hasC].filter(Boolean).length,
+    tier1Provenance: tier1,
+    tier2Correspondence: tier2,
+    tier3UnifiedSynthesis: tier3,
+    totalInspected: total,
+    link1Active: tier1,
+    link2Active: tier2,
+    link3Active: tier3,
   };
 }
 
 /**
- * React hook to access and synchronize investigation progression across routes and storage events.
+ * React hook to access and synchronize investigation progression across routes and browser storage events.
+ * Handles cross-tab synchronization cleanly:
+ * - Updates to zero when another tab resets progression (StorageEvent.newValue === null or localStorage.clear()).
+ * - Syncs when another tab inspects an exhibit.
+ * - Dispatches and listens to custom events for immediate single-tab reactivity.
  */
 export function useProgression() {
   const [inspectedIds, setInspectedIds] = useState<string[]>(() => loadInspectedIds());
@@ -163,8 +243,20 @@ export function useProgression() {
     };
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === PROGRESSION_STORAGE_KEY) {
-        setInspectedIds(loadInspectedIds());
+      // StorageEvent fires in other tabs/windows when localStorage changes.
+      // e.key === null indicates localStorage.clear() was called.
+      // e.key === PROGRESSION_STORAGE_KEY indicates our key was modified or removed.
+      if (e.key === PROGRESSION_STORAGE_KEY || e.key === null) {
+        if (e.newValue === null) {
+          // Another tab removed the key or cleared storage: reset current tab to 0 immediately!
+          inMemoryProgression = [];
+          setInspectedIds([]);
+        } else {
+          // Another tab updated the stored progression: sanitize and apply
+          const sanitized = sanitizeExhibitIds(e.newValue);
+          inMemoryProgression = sanitized;
+          setInspectedIds(sanitized);
+        }
       }
     };
 

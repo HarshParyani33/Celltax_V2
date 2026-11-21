@@ -234,6 +234,9 @@ async function run() {
     await wait(200);
   }
 
+  // Clear progression storage at test session start for clean idempotent baseline
+  await evalInBrowser(`window.localStorage.removeItem('celltax_investigation_progression_v1')`);
+
   // 3. Test Terminal Screen & Skip Intro
   console.log('[E2E 3/12] Testing Screen A: Access Terminal & Skip Intro typing stability...');
   await wait(400);
@@ -538,7 +541,23 @@ async function run() {
   }
   const timelineHeading = await evalInBrowser(`document.body.innerText.includes("THE CONNECTED INVESTIGATION TIMELINE")`);
   if (!timelineHeading) throw new Error('Timeline page content missing');
-  console.log('  -> Navigated to /timeline; verified chronological nodes and progressive links');
+
+  // Verify Phase 3: Expandable memory log details
+  await evalInBrowser(`(() => {
+    const expandBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('EXPAND ARCHIVAL MEMORY LOG'));
+    if (expandBtn) expandBtn.click();
+  })()`);
+  await wait(400);
+
+  const isMemoryExpanded = await evalInBrowser(`Boolean(document.body.innerText.includes("The Solitary Horizon") || document.body.innerText.includes("CONCEAL ARCHIVAL MEMORY LOG"))`);
+  if (!isMemoryExpanded) throw new Error('Expandable archival memory log failed to expand');
+
+  await evalInBrowser(`(() => {
+    const concealBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('CONCEAL ARCHIVAL MEMORY LOG'));
+    if (concealBtn) concealBtn.click();
+  })()`);
+  await wait(300);
+  console.log('  -> Navigated to /timeline; verified chronological nodes, progressive links, and expandable memory log');
 
   // Attempt direct navigation to /gallery while locked
   await evalInBrowser(`(() => {
@@ -597,6 +616,45 @@ async function run() {
   if (!isUnlockedTitleVisible) throw new Error('Master gallery failed to unlock after all 3 exhibits inspected');
   console.log('  -> Master Curatorial Gallery successfully unlocked and rendered');
 
+  // Verify Accessible Optical Zoom on exhibit pedestals
+  await evalInBrowser(`(() => {
+    const zoomBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('OPTICAL ZOOM'));
+    if (zoomBtn) {
+      zoomBtn.focus();
+      zoomBtn.click();
+    }
+  })()`);
+  await wait(500);
+
+  const isZoomDialogOpen = await evalInBrowser(`Boolean(document.querySelector('[role="dialog"][aria-labelledby="optical-zoom-title"]'))`);
+  if (!isZoomDialogOpen) throw new Error('Optical zoom dialog failed to open on pedestal button click');
+
+  const isFocusInZoomDialog = await evalInBrowser(`(() => {
+    const dialog = document.querySelector('[role="dialog"][aria-labelledby="optical-zoom-title"]');
+    return dialog ? dialog.contains(document.activeElement) : false;
+  })()`);
+  if (!isFocusInZoomDialog) throw new Error('Focus was not placed inside optical zoom dialog upon opening');
+
+  // Dismiss optical zoom via Escape key
+  await evalInBrowser(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));`);
+  await wait(400);
+
+  const isZoomClosed = await evalInBrowser(`!document.querySelector('[role="dialog"][aria-labelledby="optical-zoom-title"]')`);
+  if (!isZoomClosed) throw new Error('Optical zoom dialog failed to close on Escape key');
+  console.log('  -> Optical zoom verified: accessible dialog opened, focus contained, and dismissed via Escape');
+
+  // Verify Phase 3: Curatorial Photo Collections Drawer
+  await evalInBrowser(`(() => {
+    const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+    const tab2 = tabs.find(t => t.textContent.includes('Archive II'));
+    if (tab2) tab2.click();
+  })()`);
+  await wait(400);
+
+  const isCollection2Active = await evalInBrowser(`document.body.innerText.includes("Epistolary Folios")`);
+  if (!isCollection2Active) throw new Error('Curatorial photo collection tab failed to switch to Archive II');
+  console.log('  -> Curatorial photo repository tabs verified: switched to Archive II (Epistolary Folios)');
+
   // Unseal final narrative revelation
   await evalInBrowser(`(() => {
     const unsealBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('UNSEAL FINAL CURATORIAL REVELATION'));
@@ -633,6 +691,13 @@ async function run() {
 
   const isResetModalOpen = await evalInBrowser(`Boolean(document.querySelector('[role="dialog"][aria-modal="true"]'))`);
   if (!isResetModalOpen) throw new Error('Reset confirmation modal failed to open');
+
+  const isFocusInResetModal = await evalInBrowser(`(() => {
+    const dialog = document.querySelector('[role="dialog"][aria-modal="true"]');
+    return dialog ? dialog.contains(document.activeElement) : false;
+  })()`);
+  if (!isFocusInResetModal) throw new Error('Focus was not placed inside reset confirmation modal upon opening');
+  console.log('  -> Reset confirmation modal accessibility verified: focus trapped inside modal dialog');
 
   // Confirm reset
   await evalInBrowser(`(() => {

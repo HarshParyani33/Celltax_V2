@@ -64,10 +64,11 @@ The Department of Extraordinary Things is structured as a progressive narrative 
   2. **1988 Era:** Weathered Dispatch Folio intercepted in courier transit (Item 012-B).
   3. **Present Era:** Astrolithic Mechanism recovery and astronomical alignment (Item 012-C).
 - **Forensic Status Distinction:** Clearly distinguishes established physical facts from investigative hypotheses.
-- **Progressive Correlation Links:** Dynamic narrative connections that activate progressively as items are examined:
-  - *Link 1 (1+ items inspected):* Temporal alignment between the observatory and dispatch coordinates.
-  - *Link 2 (2+ items inspected):* Provenance correlation linking courier paths with celestial gear ratios.
-  - *Link 3 (3 items inspected):* Cryptographic convergence confirming all three anomalies point to a single subject.
+- **Sequential Discovery Correlation Links:** Dynamic narrative connections governed by strict sequential discovery rules:
+  - *Link 1 (Temporal Alignment):* Activates upon inspecting the first relevant exhibit (`ITEM-012-A`).
+  - *Link 2 (Provenance Correlation):* Activates sequentially upon inspecting both the first and second exhibits (`ITEM-012-A` and `ITEM-012-B`).
+  - *Link 3 (Cryptographic Convergence):* Activates only after all three exhibits have been inspected.
+- **Phase 3 Memory Logs:** Interactive expandable drawers on each milestone node displaying detailed narrative recollections, approximate period badges, contextual locations, and personal reflection notes.
 
 #### 5. Screen E: Master Curatorial Gallery (`/gallery` or `/museum`)
 - **Locked State (< 3 exhibits examined):**
@@ -76,19 +77,28 @@ The Department of Extraordinary Things is structured as a progressive narrative 
   - Remaining uninspected exhibits inventory with direct navigation back to the archive.
 - **Unlocked State (all 3 exhibits examined):**
   - **Curatorial Editorial Essay:** "The Convergence of Extraordinary Anomalies" curatorial synthesis.
-  - **Triple Archival Pedestals:** Elevated museum exhibition mounts featuring spotlight lighting, brass label plaques, provenance metadata, and optical zoom toggles for all three exhibits.
+  - **Triple Archival Pedestals:** Elevated museum exhibition mounts featuring spotlight lighting, brass label plaques, provenance metadata, and optical zoom inspection for all three exhibits.
+  - **Optical Zoom Dialog:** Keyboard-accessible modal dialog (`role="dialog"`, `aria-modal="true"`) with high-resolution inspection viewport, material specs, dimensions, Escape dismissal, and focus restoration.
+  - **Curatorial Photo Collections Drawer:** Tabbed archival photograph series with responsive grids and accessible image zoom dialogs.
   - **Forensic Synthesis Matrix:** Core forensic deductions unifying the visual, documentary, and mechanical evidence.
   - **Final Curatorial Revelation Drawer:** Interactive unsealing control marked by the Department seal, revealing the classified dedication ("To An Extraordinary Individual").
-  - **Accessible Investigation Reset:** Accessible confirmation dialog (`role="dialog"`, `aria-modal="true"`) allowing investigators to clear progression and restart the case.
+  - **Accessible Investigation Reset Dialog:** Accessible confirmation dialog (`role="dialog"`, `aria-modal="true"`) with immediate focus containment, Escape dismissal, and safe trigger restoration.
 
 ---
 
 ### Investigation Progression Architecture (`src/utils/progression.ts`)
 
 - **State Persistence:** Inspected exhibit IDs are tracked and persisted in browser `localStorage` under `celltax_investigation_progression_v1` with an in-memory fallback.
-- **Idempotent Storage:** Duplicate inspection IDs are prevented automatically.
-- **Reactive Synchronization:** Exposes a custom `useProgression()` React hook that listens to both native storage events and internal dispatch notifications, ensuring instant synchronization across all routes and header badges without requiring external state management dependencies.
-- **Safe Degradation:** Gracefully catches and recovers from quota exhaustion, blocked storage permissions, or corrupt JSON payloads.
+- **Cross-Tab Synchronization:** Listens to native `StorageEvent` and internal dispatch notifications. When another tab resets progression (`e.newValue === null` or `e.key === null`), the current tab instantly clears in-memory state and updates to zero.
+- **Idempotent Storage & Safe Degradation:** Duplicate inspection IDs are prevented automatically. Gracefully catches and recovers from quota exhaustion, blocked storage permissions, or corrupt JSON payloads.
+
+---
+
+### Phase 3 Personal Memory Foundation & Privacy Architecture
+
+- **Structured Content Architecture (`src/types/memory.ts` & `src/data/memories.ts`):** Reusable typed content models supporting titles, short descriptions, full narratives, dates (including approximate periods), locations, primary/alternate images, categories (`milestone`, `voyage`, `curiosity`, `relic`, `personal`), timeline positions, captions, personal notes, display orders, and visibility states.
+- **Public Repository Privacy Guarantee:** This public repository contains only generic archival placeholders. Real personal memories, private letters, intimate family photos, and dates are never committed to tracked public code or documentation.
+- **Private Content Strategy:** Full architectural documentation and deployment strategies (Client-Side Cryptographic Envelope via Web Crypto API, Private Repository Fork, or CI/CD Secret Injection) are detailed in [docs/private-content-strategy.md](file:///docs/private-content-strategy.md).
 
 ---
 
@@ -122,6 +132,8 @@ The Department of Extraordinary Things is structured as a progressive narrative 
 celltax_v2/
 ├── .agents/                    # Agent skills & workflows (git-ignored)
 ├── .gravitas/                  # GRAVITAS Task Contract & verification ledger
+├── docs/
+│   └── private-content-strategy.md # Safe private memory deployment & encryption guide
 ├── public/
 │   ├── images/                 # Optimized local archival assets (.jpg and .webp)
 │   │   ├── evidence-photograph.jpg
@@ -140,11 +152,15 @@ celltax_v2/
 │   └── phase1-validation.js    # Architectural & integration validation checks
 ├── src/
 │   ├── components/             # Reusable UI elements (Header, Footer, EvidenceModal)
-│   ├── data/                   # Structured case dossiers and evidence collections
+│   ├── data/                   # Structured case dossiers, evidence, and memory models
+│   │   ├── evidence.ts
+│   │   └── memories.ts         # Phase 3 typed placeholder memories & gallery collections
 │   ├── pages/                  # Terminal, Briefing, EvidenceArchive, InvestigationTimeline, MasterGallery
 │   ├── styles/                 # Tailwind base layers, scanline textures, and scrollbars
 │   ├── tokens/                 # Investigation & Museum design tokens
 │   ├── types/                  # Strict TypeScript domain interfaces
+│   │   ├── index.ts
+│   │   └── memory.ts           # Phase 3 memory, collection, and gallery item interfaces
 │   ├── utils/                  # Audio, animations, credentials, timers, focus, progression
 │   ├── App.tsx                 # Route coordinator & cinematic transition wrapper
 │   └── main.tsx                # Application entrypoint
@@ -195,14 +211,15 @@ Visit `http://localhost:5173` in your browser.
 All verifications are executed automatically:
 1. **TypeScript Typecheck:** `npm run typecheck` passes with zero errors under strict mode.
 2. **Production Build:** `npm run build` compiles clean bundles with full route code splitting and asset hashing.
-3. **Behavioral Suite (22 Unit Tests across 9 Suites):** `npm test` runs Node test runner against actual module exports:
+3. **Behavioral Suite (34 Unit Tests across 10 Suites):** `npm test` runs Node test runner against actual module exports:
    - `src/utils/credentials.ts`: Case-insensitive whitespace-tolerant clearance validation.
    - `src/utils/timers.ts`: Active interval and timeout lifecycle tracking and teardown.
    - `src/utils/focus.ts`: Hidden-ancestor DOM filtering, boundary Tab wrapping, and safe focus restoration.
    - `src/utils/animations.ts`: Strict reduced-motion compliance (zeroing translation, suppressing delays).
    - `src/utils/audio.ts`: Autoplay compliance (starts muted by default).
    - `src/data/evidence.ts`: Catalog integrity and media asset parity.
-   - `src/utils/progression.ts`: Persistent storage synchronization, duplicate prevention, completion percentage, remaining exhibits calculation, progressive timeline links, reset handler, and corrupted `localStorage` recovery.
+   - `src/utils/progression.ts`: Persistent storage synchronization, cross-tab `StorageEvent` resets, storage clear handling, duplicate prevention, completion percentage, remaining exhibits calculation, sequential timeline connection rules, idempotent reset handling, and corrupted `localStorage` recovery.
+   - `src/data/memories.ts`: Chronological sorting, multi-memory support on identical dates, period grouping, evidence adapter transformation, and structured gallery photo collections.
 4. **Architectural & Integration Checks (32 Tests):** Validates asset generation, non-zero image bytecounts, WebP and SVG links, ARIA dialog roles, skip-intro controls, and alert roles.
 5. **Real Browser CDP E2E (12 Stages):** `npm run test:e2e` launches real headless Chromium and validates:
    - Typewriter skip-intro interval cancellation.
@@ -211,11 +228,13 @@ All verifications are executed automatically:
    - Evidence category filtering.
    - Modal bidirectional Tab focus trapping, Escape key closing, and trigger focus restoration.
    - Progression accumulation across individual exhibit inspections.
-   - Investigation Timeline node rendering and progressive correlation links.
+   - Investigation Timeline node rendering, sequential progressive correlation links, and expandable archival memory log toggles.
    - Locked Master Gallery enforcement (progress bar + remaining uninspected items breakdown).
    - Master Gallery unlocking upon examining all 3 exhibits.
+   - Master Gallery optical zoom inspection dialog with focus trapping and Escape dismissal.
+   - Master Gallery curatorial photograph series with tabbed collections.
    - Final curatorial revelation unsealing drawer ("To An Extraordinary Individual").
    - LocalStorage progression persistence across full browser reload.
-   - Progression reset confirmation dialog and archive return.
+   - Progression reset confirmation dialog (focus contained on opening) and archive return.
    - Desktop (1440px) and Mobile (390px) responsive layout rendering without horizontal overflow.
    - Zero console errors, zero uncaught page exceptions, and zero failed network requests.

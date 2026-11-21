@@ -33,3 +33,5 @@ export interface SoundSettings {
   soundEnabled: boolean;
   masterVolume: number;
 }
+
+export * from './memory';

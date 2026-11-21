@@ -467,6 +467,198 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
       mockStorage[PROGRESSION_STORAGE_KEY] = JSON.stringify(['UNKNOWN-999', 'ITEM-012-A', 42, null, true]);
       assert.deepStrictEqual(loadInspectedIds(), ['ITEM-012-A']);
     });
+
+    it('should synchronize state when another tab resets progression (StorageEvent with newValue === null)', async () => {
+      const { saveInspectedIds, loadInspectedIds, PROGRESSION_STORAGE_KEY, sanitizeExhibitIds } = await import('../src/utils/progression.ts');
+
+      saveInspectedIds(['ITEM-012-A', 'ITEM-012-B']);
+      assert.strictEqual(loadInspectedIds().length, 2);
+
+      // Simulate another tab removing the key (e.g. reset in another tab)
+      delete mockStorage[PROGRESSION_STORAGE_KEY];
+      const storageEvent = { key: PROGRESSION_STORAGE_KEY, newValue: null };
+
+      // In response to newValue === null, sanitizeExhibitIds returns [] and loadInspectedIds returns []
+      const sanitized = sanitizeExhibitIds(storageEvent.newValue);
+      assert.deepStrictEqual(sanitized, []);
+      assert.deepStrictEqual(loadInspectedIds(), []);
+    });
+
+    it('should synchronize state when another tab adds an exhibit (StorageEvent with new array)', async () => {
+      const { saveInspectedIds, loadInspectedIds, PROGRESSION_STORAGE_KEY, sanitizeExhibitIds } = await import('../src/utils/progression.ts');
+
+      saveInspectedIds(['ITEM-012-A']);
+      assert.deepStrictEqual(loadInspectedIds(), ['ITEM-012-A']);
+
+      // Simulate another tab saving ['ITEM-012-A', 'ITEM-012-B']
+      const updatedJson = JSON.stringify(['ITEM-012-A', 'ITEM-012-B']);
+      mockStorage[PROGRESSION_STORAGE_KEY] = updatedJson;
+
+      const storageEvent = { key: PROGRESSION_STORAGE_KEY, newValue: updatedJson };
+      const synced = sanitizeExhibitIds(storageEvent.newValue);
+      assert.deepStrictEqual(synced, ['ITEM-012-A', 'ITEM-012-B']);
+      assert.deepStrictEqual(loadInspectedIds(), ['ITEM-012-A', 'ITEM-012-B']);
+    });
+
+    it('should synchronize state when another tab clears all storage (StorageEvent with key === null)', async () => {
+      const { saveInspectedIds, loadInspectedIds, sanitizeExhibitIds } = await import('../src/utils/progression.ts');
+
+      saveInspectedIds(['ITEM-012-A', 'ITEM-012-B', 'ITEM-012-C']);
+      assert.strictEqual(loadInspectedIds().length, 3);
+
+      // Clear storage
+      mockStorage = {};
+      const clearEvent = { key: null, newValue: null };
+
+      const sanitized = sanitizeExhibitIds(clearEvent.newValue);
+      assert.deepStrictEqual(sanitized, []);
+      assert.deepStrictEqual(loadInspectedIds(), []);
+    });
+
+    it('should support repeated reset calls idempotently', async () => {
+      const { resetProgression, loadInspectedIds, saveInspectedIds } = await import('../src/utils/progression.ts');
+
+      saveInspectedIds(['ITEM-012-A']);
+      assert.strictEqual(loadInspectedIds().length, 1);
+
+      // Call resetProgression multiple times consecutively
+      resetProgression();
+      resetProgression();
+      resetProgression();
+
+      assert.deepStrictEqual(loadInspectedIds(), []);
+    });
+
+    it('should preserve in-memory progression when localStorage throws or is unavailable', async () => {
+      const { saveInspectedIds, loadInspectedIds } = await import('../src/utils/progression.ts');
+
+      // Save initial state
+      saveInspectedIds(['ITEM-012-A']);
+
+      // Simulate storage becoming unavailable / throwing SecurityError
+      globalThis.window.localStorage.getItem = () => {
+        throw new Error('SecurityError: The operation is insecure.');
+      };
+
+      // Should safely return in-memory fallback without throwing
+      const recovered = loadInspectedIds();
+      assert.deepStrictEqual(recovered, ['ITEM-012-A']);
+    });
+
+    it('should enforce sequential discovery rules on timeline connections', async () => {
+      const { getActiveTimelineConnections } = await import('../src/utils/progression.ts');
+
+      // Out-of-order: Exhibit B inspected before Exhibit A
+      const outOfOrderB = getActiveTimelineConnections(['ITEM-012-B']);
+      assert.strictEqual(outOfOrderB.tier1Provenance, false);
+      assert.strictEqual(outOfOrderB.tier2Correspondence, false);
+      assert.strictEqual(outOfOrderB.tier3UnifiedSynthesis, false);
+      assert.strictEqual(outOfOrderB.link1Active, false);
+      assert.strictEqual(outOfOrderB.link2Active, false);
+      assert.strictEqual(outOfOrderB.link3Active, false);
+
+      // Only Exhibit A inspected: activates Link 1 only
+      const sequentialA = getActiveTimelineConnections(['ITEM-012-A']);
+      assert.strictEqual(sequentialA.tier1Provenance, true);
+      assert.strictEqual(sequentialA.link1Active, true);
+      assert.strictEqual(sequentialA.tier2Correspondence, false);
+      assert.strictEqual(sequentialA.link2Active, false);
+
+      // Exhibit A and B inspected sequentially: activates Link 1 and Link 2
+      const sequentialAB = getActiveTimelineConnections(['ITEM-012-A', 'ITEM-012-B']);
+      assert.strictEqual(sequentialAB.tier1Provenance, true);
+      assert.strictEqual(sequentialAB.tier2Correspondence, true);
+      assert.strictEqual(sequentialAB.tier3UnifiedSynthesis, false);
+
+      // All three inspected: activates all three
+      const sequentialABC = getActiveTimelineConnections(['ITEM-012-A', 'ITEM-012-B', 'ITEM-012-C']);
+      assert.strictEqual(sequentialABC.tier1Provenance, true);
+      assert.strictEqual(sequentialABC.tier2Correspondence, true);
+      assert.strictEqual(sequentialABC.tier3UnifiedSynthesis, true);
+      assert.strictEqual(sequentialABC.link3Active, true);
+    });
+
+    it('sanitizeExhibitIds should correctly sanitize and deduplicate storage strings', async () => {
+      const { sanitizeExhibitIds } = await import('../src/utils/progression.ts');
+
+      assert.deepStrictEqual(sanitizeExhibitIds(null), []);
+      assert.deepStrictEqual(sanitizeExhibitIds(undefined), []);
+      assert.deepStrictEqual(sanitizeExhibitIds(''), []);
+      assert.deepStrictEqual(sanitizeExhibitIds('not json'), []);
+      assert.deepStrictEqual(sanitizeExhibitIds(JSON.stringify(['ITEM-012-A', 'ITEM-012-A', 'UNKNOWN'])), ['ITEM-012-A']);
+      assert.deepStrictEqual(sanitizeExhibitIds(JSON.stringify(['ITEM-012-A', 'ITEM-012-B'])), ['ITEM-012-A', 'ITEM-012-B']);
+    });
+  });
+
+  describe('Phase 3 Personal Memory Foundation Logic Tests', () => {
+    it('sortMemoriesChronologically should order memories by timeline position and display order', async () => {
+      const { sortMemoriesChronologically } = await import('../src/data/memories.ts');
+
+      const mockMemories = [
+        { id: 'M3', title: 'Three', shortDescription: '', fullNarrative: '', date: '2026-01-01', category: 'milestone', timelinePosition: 2026, displayOrder: 1, visibility: 'revealed', image: '' },
+        { id: 'M1', title: 'One', shortDescription: '', fullNarrative: '', date: '1978-06-21', category: 'voyage', timelinePosition: 1978, displayOrder: 1, visibility: 'revealed', image: '' },
+        { id: 'M2', title: 'Two', shortDescription: '', fullNarrative: '', date: '1978-06-21', category: 'curiosity', timelinePosition: 1978, displayOrder: 2, visibility: 'revealed', image: '' },
+      ];
+
+      const sorted = sortMemoriesChronologically(mockMemories);
+      assert.strictEqual(sorted[0].id, 'M1');
+      assert.strictEqual(sorted[1].id, 'M2');
+      assert.strictEqual(sorted[2].id, 'M3');
+    });
+
+    it('should support multiple memories on the exact same date', async () => {
+      const { PLACEHOLDER_MEMORIES } = await import('../src/data/memories.ts');
+
+      const solsticeMemories = PLACEHOLDER_MEMORIES.filter((m) => m.date === '1978-06-21');
+      assert.strictEqual(solsticeMemories.length >= 2, true, 'Expected multiple memories sharing the 1978-06-21 date');
+      assert.notStrictEqual(solsticeMemories[0].id, solsticeMemories[1].id);
+      assert.notStrictEqual(solsticeMemories[0].title, solsticeMemories[1].title);
+    });
+
+    it('groupMemoriesByPeriod should organize memories into period-based groups', async () => {
+      const { groupMemoriesByPeriod, PLACEHOLDER_MEMORIES } = await import('../src/data/memories.ts');
+
+      const groups = groupMemoriesByPeriod(PLACEHOLDER_MEMORIES);
+      assert.ok(groups['1978']);
+      assert.strictEqual(groups['1978'].length >= 2, true);
+    });
+
+    it('evidenceToMemoryItem should properly convert EvidenceItem to MemoryItem structure', async () => {
+      const { evidenceToMemoryItem } = await import('../src/data/memories.ts');
+      const { EVIDENCE_COLLECTION } = await import('../src/data/evidence.ts');
+
+      const evidence = EVIDENCE_COLLECTION[0];
+      const memory = evidenceToMemoryItem(evidence, 1978);
+
+      assert.strictEqual(memory.id, `MEM-${evidence.id}`);
+      assert.strictEqual(memory.title, evidence.title);
+      assert.strictEqual(memory.shortDescription, evidence.summary);
+      assert.ok(memory.fullNarrative.length > 0);
+      assert.strictEqual(memory.image, evidence.imageUrl);
+      assert.strictEqual(memory.location, evidence.origin);
+      assert.strictEqual(memory.timelinePosition, 1978);
+      assert.strictEqual(memory.visibility, 'revealed');
+      assert.strictEqual(memory.evidenceIdRef, evidence.id);
+    });
+
+    it('PLACEHOLDER_GALLERY_COLLECTIONS should contain valid structured collections with photos', async () => {
+      const { PLACEHOLDER_GALLERY_COLLECTIONS } = await import('../src/data/memories.ts');
+
+      assert.strictEqual(PLACEHOLDER_GALLERY_COLLECTIONS.length, 3);
+      for (const col of PLACEHOLDER_GALLERY_COLLECTIONS) {
+        assert.ok(col.id);
+        assert.ok(col.title);
+        assert.ok(col.description);
+        assert.ok(Array.isArray(col.photos));
+        assert.strictEqual(col.photos.length >= 1, true);
+        for (const photo of col.photos) {
+          assert.ok(photo.id);
+          assert.ok(photo.title);
+          assert.ok(photo.imageUrl);
+          assert.ok(photo.collectionId);
+        }
+      }
+    });
   });
 
 });
