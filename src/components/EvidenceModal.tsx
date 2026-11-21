@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X, Search, FileText, AlertCircle, Compass } from 'lucide-react';
 import { EvidenceItem } from '../types';
 import { soundFx } from '../utils/audio';
+import { usePrefersReducedMotion } from '../utils/animations';
 
 interface EvidenceModalProps {
   item: EvidenceItem;
@@ -13,31 +14,40 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
   const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
+
+  // Keep a stable ref to onClose to prevent stale closures and unnecessary re-attaches
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
-    // 1. Capture previously focused element to restore on close
-    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // 1. Capture previously focused element if it originated outside the dialog
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && (!modalRef.current || !modalRef.current.contains(active))) {
+      previousFocusRef.current = active;
+    }
 
     // 2. Lock body scroll
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // 3. Focus the primary close button on open
+    // 3. Move initial focus to the primary close button
     const focusTimer = setTimeout(() => {
       closeBtnRef.current?.focus();
-    }, 40);
+    }, 30);
 
     // 4. Global Escape key listener
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
 
-    // 5. Contain focus if focus ever shifts outside the dialog window
+    // 5. Contain focus if focus ever shifts outside the dialog container
     const handleFocusIn = (e: FocusEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
         e.stopPropagation();
@@ -52,16 +62,19 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
       document.removeEventListener('focusin', handleFocusIn);
       document.body.style.overflow = originalOverflow;
 
-      // Restore focus safely to the original trigger element
-      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+      // 6. Safely restore focus to the original triggering element if still connected to the DOM
+      const trigger = previousFocusRef.current;
+      if (trigger && document.body.contains(trigger) && typeof trigger.focus === 'function') {
         try {
-          previousFocusRef.current.focus();
-        } catch {}
+          trigger.focus();
+        } catch {
+          // Gracefully ignore focus errors on detached/unfocusable targets
+        }
       }
     };
-  }, [onClose]);
+  }, []);
 
-  // Focus trap implementation: handles Tab and Shift+Tab wrapping, plus focus-recovery
+  // Focus trap implementation: handles Tab and Shift+Tab wrapping within the dialog
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Tab') {
       const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
@@ -103,7 +116,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
         transition={{ duration: shouldReduceMotion ? 0.01 : 0.25 }}
         onClick={() => {
           soundFx.playKeypress();
-          onClose();
+          onCloseRef.current();
         }}
         className="fixed inset-0 bg-charcoal-900/90 backdrop-blur-md"
       />
@@ -119,21 +132,21 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
         initial={{
           opacity: 0,
           scale: shouldReduceMotion ? 1 : 0.95,
-          y: shouldReduceMotion ? 0 : 15
+          y: shouldReduceMotion ? 0 : 15,
         }}
         animate={{
           opacity: 1,
           scale: 1,
-          y: 0
+          y: 0,
         }}
         exit={{
           opacity: 0,
           scale: shouldReduceMotion ? 1 : 0.95,
-          y: shouldReduceMotion ? 0 : 15
+          y: shouldReduceMotion ? 0 : 15,
         }}
         transition={{
           duration: shouldReduceMotion ? 0.01 : 0.3,
-          ease: [0.16, 1, 0.3, 1]
+          ease: [0.16, 1, 0.3, 1],
         }}
         className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-investigation-surface border border-brass/50 rounded-lg shadow-dossier overflow-hidden z-10 focus:outline-none"
       >
@@ -150,7 +163,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
             ref={closeBtnRef}
             onClick={() => {
               soundFx.playKeypress();
-              onClose();
+              onCloseRef.current();
             }}
             aria-label="Close Inspection Dossier (Escape)"
             className="p-1.5 rounded-md hover:bg-investigation-surface border border-transparent hover:border-brass/40 text-investigation-muted hover:text-brass transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
@@ -302,7 +315,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({ item, onClose }) =
             <button
               onClick={() => {
                 soundFx.playKeypress();
-                onClose();
+                onCloseRef.current();
               }}
               className="w-full sm:w-auto px-6 py-2 rounded border border-brass/60 bg-investigation-card hover:bg-investigation-surface text-brass-light font-mono text-xs tracking-wider uppercase transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
             >

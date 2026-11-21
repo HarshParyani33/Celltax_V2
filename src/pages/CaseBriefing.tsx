@@ -14,10 +14,11 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { CASE_DOSSIER_DATA } from '../data/evidence';
 import { soundFx } from '../utils/audio';
-import { pageTransition } from '../utils/animations';
+import { getPageTransition, getDocumentReveal, usePrefersReducedMotion } from '../utils/animations';
 
 export const CaseBriefing: React.FC = () => {
   const navigate = useNavigate();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const [isAccepted, setIsAccepted] = useState(false);
 
   const handleAcceptInvestigation = () => {
@@ -30,7 +31,7 @@ export const CaseBriefing: React.FC = () => {
 
   return (
     <motion.div
-      variants={pageTransition}
+      variants={getPageTransition(shouldReduceMotion)}
       initial="initial"
       animate="animate"
       exit="exit"
@@ -61,9 +62,9 @@ export const CaseBriefing: React.FC = () => {
 
         {/* The Confidential Case Dossier Physical Document */}
         <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          variants={getDocumentReveal(shouldReduceMotion)}
+          initial="initial"
+          animate="animate"
           className="relative bg-investigation-forest border border-brass/40 rounded-lg shadow-dossier overflow-hidden"
         >
           {/* Top Physical Folder Tab Header */}
@@ -173,8 +174,8 @@ export const CaseBriefing: React.FC = () => {
               </div>
 
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
                 onClick={handleAcceptInvestigation}
                 disabled={isAccepted}
                 className={`

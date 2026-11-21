@@ -1,6 +1,13 @@
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { EVIDENCE_COLLECTION, CASE_DOSSIER_DATA } from '../src/data/evidence.ts';
+import {
+  getPageTransition,
+  getDocumentReveal,
+  getTerminalLineReveal,
+  getEvidenceCardHover,
+} from '../src/utils/animations.ts';
+import { soundFx } from '../src/utils/audio.ts';
 
 describe('Phase 1 Core Behavioral Logic Tests', () => {
 
@@ -20,7 +27,7 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
     ];
 
     it('should accept all valid case clearance codes regardless of whitespace or casing', () => {
-      const testInputs = ['012', ' 012 ', 'extraordinary', 'EXTRAORDINARY', 'Case012', 'archive'];
+      const testInputs = ['012', ' 012 ', 'extraordinary', 'EXTRAORDINARY', 'Case012', 'archive', '  start  '];
       for (const input of testInputs) {
         const clean = input.trim().toUpperCase();
         assert.ok(ACCEPTED_CODES.includes(clean), `Expected "${input}" to be accepted`);
@@ -28,7 +35,7 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
     });
 
     it('should reject invalid credentials and trigger error state', () => {
-      const invalidInputs = ['1234', 'PASSWORD', 'ADMIN', 'GUEST', 'UNKNOWN'];
+      const invalidInputs = ['1234', 'PASSWORD', 'ADMIN', 'GUEST', 'UNKNOWN', ''];
       for (const input of invalidInputs) {
         const clean = input.trim().toUpperCase();
         assert.strictEqual(ACCEPTED_CODES.includes(clean), false, `Expected "${input}" to be rejected`);
@@ -39,13 +46,11 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
   describe('AccessTerminal: Skip-Intro Interval & Timeout Lifecycle', () => {
     it('should cancel active interval and pending timeouts when Skip Intro is invoked', () => {
       let intervalCleared = false;
-      let activeInterval = setInterval(() => {}, 200);
+      const activeInterval = setInterval(() => {}, 200);
 
-      // Simulate interval ref tracking
       const intervalRef = { current: activeInterval };
       const timeoutsRef = { current: [setTimeout(() => {}, 500)] };
 
-      // Simulate handleSkipIntro implementation
       const clearAllTimers = () => {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
@@ -65,7 +70,7 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
   });
 
   describe('EvidenceArchive: Filtering & Catalog State', () => {
-    it('should correctly filter exhibits by category', () => {
+    it('should correctly filter exhibits by category with real data', () => {
       const allItems = EVIDENCE_COLLECTION;
       assert.strictEqual(allItems.length, 3, 'Total items should be 3');
 
@@ -100,7 +105,6 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
 
   describe('EvidenceModal: Focus Trap & Focus Restoration Invariants', () => {
     it('should correctly calculate focus wrap boundaries for Tab and Shift+Tab', () => {
-      // Mock focusable element array
       const focusableElements = [
         { id: 'close-btn', focus: () => {} },
         { id: 'inspect-image', focus: () => {} },
@@ -140,7 +144,6 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
 
       const externalElement = { insideModal: false };
 
-      // Focus-containment check
       if (!modalContainer.contains(externalElement)) {
         closeBtn.focus();
       }
@@ -148,25 +151,31 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
       assert.strictEqual(focusedTarget, 'close-btn', 'Focus outside modal must be redirected back to close button');
     });
 
-    it('should restore focus to the triggering element on unmount', () => {
+    it('should restore focus to the triggering element on unmount only if element is attached', () => {
       let restoredElement = null;
+      const mockDocument = {
+        bodyContains: true,
+      };
+
       const triggeringCard = {
         id: 'evidence-card-012-A',
         focus: () => { restoredElement = 'evidence-card-012-A'; }
       };
 
-      // Store previous focus on open
-      const previousFocus = triggeringCard;
-
-      // Simulate modal unmount lifecycle
-      const onUnmount = () => {
-        if (previousFocus && typeof previousFocus.focus === 'function') {
-          previousFocus.focus();
+      const onUnmount = (trigger, isAttached) => {
+        if (trigger && isAttached && typeof trigger.focus === 'function') {
+          trigger.focus();
         }
       };
 
-      onUnmount();
-      assert.strictEqual(restoredElement, 'evidence-card-012-A', 'Original triggering element must receive focus on modal unmount');
+      // Case 1: Trigger element is valid and attached
+      onUnmount(triggeringCard, true);
+      assert.strictEqual(restoredElement, 'evidence-card-012-A', 'Original triggering element must receive focus');
+
+      // Case 2: Trigger element is detached
+      restoredElement = null;
+      onUnmount(triggeringCard, false);
+      assert.strictEqual(restoredElement, null, 'Detached element must not receive focus');
     });
 
     it('should invoke onClose callback when Escape key event is triggered', () => {
@@ -188,23 +197,90 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
     });
   });
 
-  describe('Reduced Motion Invariant Checks', () => {
-    it('should configure 0 or near-zero duration when reduced motion is preferred', () => {
-      const getTransition = (shouldReduceMotion) => ({
-        duration: shouldReduceMotion ? 0.01 : 0.3,
-        scale: shouldReduceMotion ? 1 : 0.95,
-        y: shouldReduceMotion ? 0 : 15
-      });
+  describe('Real Animation Variants: Normal vs Reduced Motion', () => {
+    it('getPageTransition should zero out spatial movement and delays under reduced motion', () => {
+      const normal = getPageTransition(false);
+      assert.strictEqual(normal.initial.y, 12, 'Normal initial y should be 12');
+      assert.strictEqual(normal.animate.transition.duration, 0.5, 'Normal duration should be 0.5');
+      assert.strictEqual(normal.animate.transition.staggerChildren, 0.06, 'Normal stagger should be 0.06');
 
-      const normal = getTransition(false);
-      assert.strictEqual(normal.duration, 0.3);
-      assert.strictEqual(normal.scale, 0.95);
-      assert.strictEqual(normal.y, 15);
+      const reduced = getPageTransition(true);
+      assert.strictEqual(reduced.initial.y, 0, 'Reduced initial y must be 0');
+      assert.strictEqual(reduced.animate.transition.duration, 0.01, 'Reduced duration must be 0.01');
+      assert.strictEqual(reduced.animate.transition.staggerChildren, 0, 'Reduced stagger must be 0');
+      assert.strictEqual(reduced.exit.y, 0, 'Reduced exit y must be 0');
+      assert.strictEqual(reduced.exit.transition.duration, 0.01, 'Reduced exit duration must be 0.01');
+    });
 
-      const reduced = getTransition(true);
-      assert.strictEqual(reduced.duration, 0.01);
-      assert.strictEqual(reduced.scale, 1);
-      assert.strictEqual(reduced.y, 0);
+    it('getTerminalLineReveal should strictly enforce x: 0 under reduced motion', () => {
+      const normal = getTerminalLineReveal(false);
+      assert.strictEqual(normal.initial.x, -8, 'Normal terminalLineReveal should have horizontal offset x: -8');
+      assert.strictEqual(normal.animate.transition.duration, 0.22);
+
+      const reduced = getTerminalLineReveal(true);
+      assert.strictEqual(reduced.initial.x, 0, 'Reduced terminalLineReveal MUST have horizontal offset x: 0');
+      assert.strictEqual(reduced.animate.transition.duration, 0.01);
+    });
+
+    it('getDocumentReveal should eliminate scaling and translation under reduced motion', () => {
+      const normal = getDocumentReveal(false);
+      assert.strictEqual(normal.initial.scale, 0.98);
+      assert.strictEqual(normal.initial.y, 20);
+      assert.strictEqual(normal.animate.transition.duration, 0.6);
+
+      const reduced = getDocumentReveal(true);
+      assert.strictEqual(reduced.initial.scale, 1, 'Reduced scale must be 1');
+      assert.strictEqual(reduced.initial.y, 0, 'Reduced y must be 0');
+      assert.strictEqual(reduced.animate.transition.duration, 0.01, 'Reduced duration must be 0.01');
+    });
+
+    it('getEvidenceCardHover should suppress vertical translation under reduced motion', () => {
+      const normal = getEvidenceCardHover(false);
+      assert.strictEqual(normal.hover.y, -6);
+
+      const reduced = getEvidenceCardHover(true);
+      assert.strictEqual(reduced.hover.y, 0, 'Reduced card hover y must be 0');
+    });
+  });
+
+  describe('Audio Engine Singleton Invariants', () => {
+    it('soundFx should be muted by default to satisfy browser autoplay policy', () => {
+      // Audio singleton starts muted for user-gesture compliance
+      const initialMute = soundFx.getMuted();
+      assert.strictEqual(typeof initialMute, 'boolean');
+      assert.strictEqual(initialMute, true, 'Audio must default to muted');
+
+      // Test toggle mute behavior
+      const unmuted = soundFx.toggleMute();
+      assert.strictEqual(unmuted, false, 'Toggling mute should return false (unmuted)');
+      assert.strictEqual(soundFx.getMuted(), false);
+
+      // Re-mute
+      const remuted = soundFx.toggleMute();
+      assert.strictEqual(remuted, true, 'Toggling mute again should return true (muted)');
+      assert.strictEqual(soundFx.getMuted(), true);
+    });
+  });
+
+  describe('Data Matrix Integrity Checks', () => {
+    it('CASE_DOSSIER_DATA should contain required classification fields', () => {
+      assert.strictEqual(CASE_DOSSIER_DATA.caseNumber, 'CASE NO. 012');
+      assert.strictEqual(CASE_DOSSIER_DATA.securityClassification, 'RESTRICTED // ULTRA-CLASSIFIED');
+      assert.ok(Array.isArray(CASE_DOSSIER_DATA.specialInstructions));
+      assert.ok(CASE_DOSSIER_DATA.specialInstructions.length >= 3);
+    });
+
+    it('EVIDENCE_COLLECTION should contain 3 valid exhibits with webp and jpg paths', () => {
+      assert.strictEqual(EVIDENCE_COLLECTION.length, 3);
+      for (const item of EVIDENCE_COLLECTION) {
+        assert.ok(item.id.startsWith('ITEM-012-'));
+        assert.ok(item.title.length > 0);
+        assert.ok(['photograph', 'document', 'artefact'].includes(item.type));
+        assert.ok(item.imageUrl.startsWith('/images/'));
+        assert.ok(item.webpUrl.startsWith('/images/'));
+        assert.ok(Array.isArray(item.anomalies));
+        assert.ok(item.anomalies.length > 0);
+      }
     });
   });
 

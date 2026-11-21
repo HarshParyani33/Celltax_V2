@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldAlert, ArrowRight, CheckCircle2, Lock, Terminal, Key, FastForward } from 'lucide-react';
 import { soundFx } from '../utils/audio';
-import { pageTransition } from '../utils/animations';
+import { getPageTransition, usePrefersReducedMotion } from '../utils/animations';
 
 const TERMINAL_LINES = [
   "INITIALIZING CLASSIFIED ARCHIVE PROTOCOL...",
@@ -33,6 +33,7 @@ const ACCEPTED_CODES = [
 
 export const AccessTerminal: React.FC = () => {
   const navigate = useNavigate();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const [displayedLines, setDisplayedLines] = useState<string[]>([]);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [credential, setCredential] = useState('');
@@ -138,7 +139,7 @@ export const AccessTerminal: React.FC = () => {
 
   return (
     <motion.div
-      variants={pageTransition}
+      variants={getPageTransition(shouldReduceMotion)}
       initial="initial"
       animate="animate"
       exit="exit"
@@ -178,9 +179,9 @@ export const AccessTerminal: React.FC = () => {
       {/* Center Console Container */}
       <main id="main-content" className="relative z-10 max-w-3xl w-full mx-auto my-auto py-8">
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: shouldReduceMotion ? 0.01 : 0.6 }}
           className="rounded-lg border border-investigation-border bg-investigation-forest/80 shadow-2xl p-6 sm:p-10 font-mono relative backdrop-blur-sm"
         >
           {/* Subtle Institutional Watermark */}
@@ -230,9 +231,9 @@ export const AccessTerminal: React.FC = () => {
           <AnimatePresence>
             {isTypingComplete && !isGranted && (
               <motion.form
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+                transition={{ duration: shouldReduceMotion ? 0.01 : 0.4 }}
                 onSubmit={handleSubmit}
                 className="mt-8 pt-6 border-t border-investigation-border space-y-4"
               >
@@ -301,7 +302,7 @@ export const AccessTerminal: React.FC = () => {
           <AnimatePresence>
             {isGranted && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="mt-8 p-6 rounded border border-brass bg-investigation-surface/90 text-center space-y-3 shadow-brass"
               >
@@ -318,7 +319,7 @@ export const AccessTerminal: React.FC = () => {
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: "100%" }}
-                    transition={{ duration: 1.2, ease: "easeInOut" }}
+                    transition={{ duration: shouldReduceMotion ? 0.01 : 1.2, ease: "easeInOut" }}
                     className="h-full bg-brass"
                   />
                 </div>

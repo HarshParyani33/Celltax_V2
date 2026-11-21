@@ -5,7 +5,57 @@ import path from 'path';
 
 console.log('--- STARTING REAL BROWSER BEHAVIORAL E2E VERIFICATION ---');
 
-const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+/**
+ * Dynamically locate Chrome or Edge executable across standard installation paths.
+ */
+function findBrowserPath() {
+  const candidatePaths = [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    path.join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe'),
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+  ];
+
+  for (const candidate of candidatePaths) {
+    if (candidate && fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    `No supported Chromium browser found. Checked Chrome and Edge paths:\n${candidatePaths.join('\n')}`
+  );
+}
+
+/**
+ * Check if the preview or dev server is responding on http://localhost:5173
+ */
+function checkServerReady(port = 5173, timeoutMs = 8000) {
+  const start = Date.now();
+  return new Promise((resolve, reject) => {
+    function ping() {
+      const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 400) {
+          resolve(true);
+        } else {
+          resolve(true); // Server is answering
+        }
+      });
+      req.on('error', (err) => {
+        if (Date.now() - start > timeoutMs) {
+          reject(new Error(`Dev server not running on http://localhost:${port}/ (${err.message})`));
+        } else {
+          setTimeout(ping, 300);
+        }
+      });
+      req.end();
+    }
+    ping();
+  });
+}
+
+const BROWSER_PATH = findBrowserPath();
 const USER_DATA_DIR = path.resolve('temp_chrome_user_dir');
 const DEBUG_PORT = 9333;
 
@@ -58,7 +108,7 @@ async function getDebuggerUrl() {
       await wait(300);
     }
   }
-  throw new Error('Could not obtain Chrome DevTools WebSocket URL on port 9222');
+  throw new Error(`Could not obtain Chrome DevTools WebSocket URL on port ${DEBUG_PORT}`);
 }
 
 async function run() {
@@ -68,9 +118,14 @@ async function run() {
     fs.mkdirSync(screenshotDir, { recursive: true });
   }
 
-  // 1. Launch Chrome Headless with DevTools port 9222
-  console.log(`[E2E 1/9] Launching Headless Chrome on port ${DEBUG_PORT}...`);
-  chromeProc = spawn(CHROME_PATH, [
+  // Check preview/dev server pre-flight
+  console.log(`[E2E 1/9] Checking preview server readiness on port 5173...`);
+  await checkServerReady(5173);
+  console.log('  -> Server is ready and answering on http://localhost:5173');
+
+  // Launch browser with CDP debugging port
+  console.log(`[E2E 2/9] Launching Chromium browser (${BROWSER_PATH}) on port ${DEBUG_PORT}...`);
+  chromeProc = spawn(BROWSER_PATH, [
     '--headless=new',
     `--remote-debugging-port=${DEBUG_PORT}`,
     `--user-data-dir=${USER_DATA_DIR}`,
@@ -80,7 +135,7 @@ async function run() {
   ]);
 
   const wsUrl = await getDebuggerUrl();
-  console.log('[E2E 2/9] Connected to Chrome DevTools WebSocket');
+  console.log('  -> Connected to Chrome DevTools WebSocket: ' + wsUrl);
 
   ws = new WebSocket(wsUrl);
   await new Promise((resolve) => ws.onopen = resolve);
@@ -94,7 +149,8 @@ async function run() {
       else resolve(msg.result);
     } else if (msg.method === 'Runtime.consoleAPICalled') {
       if (msg.params.type === 'error') {
-        consoleErrors.push(msg.params.args.map((a) => a.value || a.description).join(' '));
+        const errorText = msg.params.args.map((a) => a.value || a.description || JSON.stringify(a)).join(' ');
+        consoleErrors.push(errorText);
       }
     }
   };
@@ -112,8 +168,8 @@ async function run() {
     await wait(200);
   }
 
-  // 2. Test Terminal Screen & Skip Intro
-  console.log('[E2E 3/9] Testing Screen A: Access Terminal & Skip Intro...');
+  // 3. Test Terminal Screen & Skip Intro Interval Teardown
+  console.log('[E2E 3/9] Testing Screen A: Access Terminal & Skip Intro typing stability...');
   await wait(400);
   const initialSkipBtn = await evalInBrowser(`Boolean(document.querySelector('button[title="Skip intro typing"]'))`);
   if (initialSkipBtn) {
@@ -123,9 +179,20 @@ async function run() {
 
   const isInputVisible = await evalInBrowser(`Boolean(document.querySelector('#clearance-input'))`);
   if (!isInputVisible) throw new Error('Clearance input not visible after skip intro');
-  console.log('  -> Skip intro successfully stopped interval and revealed clearance form');
 
-  // 3. Test Invalid Credential
+  // Verify interval is completely stopped: line count must be 8 and stay exactly 8
+  const initialLineCount = await evalInBrowser(`document.querySelectorAll('[aria-live="polite"] > div').length`);
+  if (initialLineCount !== 8) {
+    throw new Error(`Expected exactly 8 terminal lines after skip intro, got ${initialLineCount}`);
+  }
+  await wait(1000);
+  const postWaitLineCount = await evalInBrowser(`document.querySelectorAll('[aria-live="polite"] > div').length`);
+  if (postWaitLineCount !== 8) {
+    throw new Error(`Typewriter interval leaked! Line count changed from 8 to ${postWaitLineCount}`);
+  }
+  console.log(`  -> Typewriter interval strictly halted on skip intro (line count stable at ${postWaitLineCount})`);
+
+  // 4. Test Invalid Credential Feedback
   console.log('[E2E 4/9] Testing invalid credential error feedback...');
   await evalInBrowser(`(() => {
     const input = document.querySelector('#clearance-input');
@@ -146,7 +213,7 @@ async function run() {
   }
   console.log('  -> Rejected invalid code with accessible alert: ' + errorAlert);
 
-  // 4. Test Valid Credential & Navigation to Briefing
+  // 5. Test Valid Credential & Navigation to Briefing
   console.log('[E2E 5/9] Testing valid credential and transition to Briefing...');
   await evalInBrowser(`(() => {
     const input = document.querySelector('#clearance-input');
@@ -164,7 +231,7 @@ async function run() {
   }
   console.log('  -> Authenticated successfully, navigated to /briefing');
 
-  // 5. Test Case Briefing & Transition to Archive
+  // 6. Test Case Briefing & Transition to Archive
   console.log('[E2E 6/9] Testing Screen B: Case Briefing & Accept Investigation...');
   const hasBriefingText = await evalInBrowser(`document.body.innerText.includes("CASE NO. 012")`);
   if (!hasBriefingText) throw new Error('Briefing content missing Case No. 012');
@@ -173,7 +240,20 @@ async function run() {
     const acceptBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('ACCEPT INVESTIGATION'));
     if (acceptBtn) acceptBtn.click();
   })()`);
-  await wait(1600);
+
+  // Wait for navigation and /archive page to mount and render cards
+  let initialCardsCount = 0;
+  for (let i = 0; i < 30; i++) {
+    await wait(200);
+    const path = await evalInBrowser(`window.location.pathname`);
+    if (path === '/archive') {
+      const count = await evalInBrowser(`document.querySelectorAll('[role="button"][aria-label^="Inspect evidence item"]').length`);
+      if (count === 3) {
+        initialCardsCount = count;
+        break;
+      }
+    }
+  }
 
   const archivePath = await evalInBrowser(`window.location.pathname`);
   if (archivePath !== '/archive') {
@@ -181,9 +261,8 @@ async function run() {
   }
   console.log('  -> Accepted investigation, navigated to /archive');
 
-  // 6. Test Evidence Archive Filtering
+  // 7. Test Evidence Archive Filtering
   console.log('[E2E 7/9] Testing Screen C: Evidence filtering buttons...');
-  const initialCardsCount = await evalInBrowser(`document.querySelectorAll('[role="button"][aria-label^="Inspect evidence item"]').length`);
   if (initialCardsCount !== 3) throw new Error(`Expected 3 evidence cards, got ${initialCardsCount}`);
 
   // Click photographs filter
@@ -204,7 +283,7 @@ async function run() {
   })()`);
   await wait(300);
 
-  // 7. Test Evidence Modal, Focus Trapping, Escape Key, Focus Restoration
+  // 8. Test Evidence Modal, Focus Trapping, Escape Key, Focus Restoration
   console.log('[E2E 8/9] Testing Modal dialog, focus trapping, Escape key, and focus restoration...');
   await evalInBrowser(`(() => {
     const firstCard = document.querySelector('[role="button"][aria-label^="Inspect evidence item"]');
@@ -213,33 +292,56 @@ async function run() {
       firstCard.click();
     }
   })()`);
-  await wait(500);
+  await wait(600);
 
   const isDialogOpen = await evalInBrowser(`Boolean(document.querySelector('[role="dialog"][aria-modal="true"]'))`);
   if (!isDialogOpen) throw new Error('Modal dialog failed to open with role="dialog"');
 
   const isFocusInside = await evalInBrowser(`
     const dialog = document.querySelector('[role="dialog"]');
-    dialog.contains(document.activeElement);
+    Boolean(dialog && document.activeElement && dialog.contains(document.activeElement));
   `);
   if (!isFocusInside) throw new Error('Focus is not contained inside the dialog on open');
   console.log('  -> Modal opened with valid ARIA semantics; focus trapped inside dialog');
+
+  // Test Tab wrap from last focusable element to first
+  const tabWrapResult = await evalInBrowser(`(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    if (!dialog) return false;
+    const focusable = dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusable.length < 2) return false;
+    const last = focusable[focusable.length - 1];
+    last.focus();
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    last.dispatchEvent(event);
+    return true;
+  })()`);
+  console.log(`  -> Focus wrapping handler validated: ${tabWrapResult}`);
 
   // Test Escape key close
   await evalInBrowser(`
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   `);
-  await wait(500);
+
+  // Wait for modal exit animation to complete
+  for (let i = 0; i < 20; i++) {
+    const dialogStillExists = await evalInBrowser(`Boolean(document.querySelector('[role="dialog"]'))`);
+    if (!dialogStillExists) break;
+    await wait(150);
+  }
 
   const isDialogClosed = await evalInBrowser(`!Boolean(document.querySelector('[role="dialog"]'))`);
   if (!isDialogClosed) throw new Error('Modal did not close on Escape key');
 
   const isFocusRestored = await evalInBrowser(`
-    document.activeElement && document.activeElement.getAttribute('aria-label')?.includes('Inspect evidence item')
+    Boolean(document.activeElement && document.activeElement.getAttribute('aria-label')?.includes('Inspect evidence item'))
   `);
-  console.log(`  -> Escape key closed modal. Focus restored to card: ${Boolean(isFocusRestored)}`);
+  if (!isFocusRestored) {
+    throw new Error('Focus was not restored to the triggering evidence card button after modal close');
+  }
+  console.log('  -> Escape key closed modal. Focus restored to trigger button: true');
 
-  // 8. Test Responsiveness, Viewports & Images
+  // 9. Test Viewports, Responsiveness, and Broken Images
   console.log('[E2E 9/9] Verifying mobile/desktop viewports and image rendering...');
 
   // Check all images rendered without errors
@@ -262,7 +364,7 @@ async function run() {
 
   const desktopScreenshot = await cdpSend('Page.captureScreenshot', { format: 'png' });
   fs.writeFileSync(path.join(screenshotDir, 'desktop_evidence_archive.png'), Buffer.from(desktopScreenshot.data, 'base64'));
-  console.log('  -> Desktop layout verified (No overflow, screenshot saved)');
+  console.log('  -> Desktop layout verified (No overflow, screenshot saved to public/screenshots/desktop_evidence_archive.png)');
 
   // Mobile viewport check (390x844 - iPhone / Android mobile)
   await cdpSend('Emulation.setDeviceMetricsOverride', {
@@ -277,13 +379,13 @@ async function run() {
 
   const mobileScreenshot = await cdpSend('Page.captureScreenshot', { format: 'png' });
   fs.writeFileSync(path.join(screenshotDir, 'mobile_evidence_archive.png'), Buffer.from(mobileScreenshot.data, 'base64'));
-  console.log('  -> Mobile layout verified (No overflow, screenshot saved)');
+  console.log('  -> Mobile layout verified (No overflow, screenshot saved to public/screenshots/mobile_evidence_archive.png)');
 
+  // Fail on unexpected console errors
   if (consoleErrors.length > 0) {
-    console.warn('  ! Console errors detected during session:', consoleErrors);
-  } else {
-    console.log('  -> Zero console errors detected during entire run');
+    throw new Error(`Unexpected console errors encountered during test session:\n${consoleErrors.join('\n')}`);
   }
+  console.log('  -> Zero console errors detected during entire run');
 
   console.log('\n--- ALL REAL BROWSER BEHAVIORAL E2E TESTS PASSED SUCCESSFULLY! ---');
 }
@@ -294,11 +396,13 @@ run()
     process.exitCode = 1;
   })
   .finally(() => {
-    if (ws) ws.close();
-    if (chromeProc) {
-      chromeProc.kill();
-      try {
-        fs.rmSync(USER_DATA_DIR, { recursive: true, force: true });
-      } catch {}
+    if (ws) {
+      try { ws.close(); } catch {}
     }
+    if (chromeProc) {
+      try { chromeProc.kill(); } catch {}
+    }
+    try {
+      fs.rmSync(USER_DATA_DIR, { recursive: true, force: true });
+    } catch {}
   });

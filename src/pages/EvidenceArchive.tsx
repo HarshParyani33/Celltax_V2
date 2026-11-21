@@ -13,7 +13,7 @@ import { EvidenceModal } from '../components/EvidenceModal';
 import { EVIDENCE_COLLECTION } from '../data/evidence';
 import { EvidenceItem } from '../types';
 import { soundFx } from '../utils/audio';
-import { pageTransition } from '../utils/animations';
+import { getPageTransition, usePrefersReducedMotion } from '../utils/animations';
 
 const FILTER_OPTIONS = [
   { id: 'all', label: 'ALL EXHIBITS', count: 3 },
@@ -23,6 +23,7 @@ const FILTER_OPTIONS = [
 ] as const;
 
 export const EvidenceArchive: React.FC = () => {
+  const shouldReduceMotion = usePrefersReducedMotion();
   const [selectedItem, setSelectedItem] = useState<EvidenceItem | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'photograph' | 'document' | 'artefact'>('all');
   const [inspectedIds, setInspectedIds] = useState<Set<string>>(new Set());
@@ -40,7 +41,7 @@ export const EvidenceArchive: React.FC = () => {
 
   return (
     <motion.div
-      variants={pageTransition}
+      variants={getPageTransition(shouldReduceMotion)}
       initial="initial"
       animate="animate"
       exit="exit"
@@ -133,10 +134,13 @@ export const EvidenceArchive: React.FC = () => {
             return (
               <motion.div
                 key={item.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ y: -6 }}
+                transition={{
+                  duration: shouldReduceMotion ? 0.01 : 0.5,
+                  delay: shouldReduceMotion ? 0 : index * 0.1,
+                }}
+                whileHover={shouldReduceMotion ? undefined : { y: -6 }}
                 className="group relative flex flex-col rounded-lg bg-investigation-surface border border-investigation-border hover:border-brass/70 shadow-evidenceCard hover:shadow-spotlight transition-all duration-300 overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
                 onClick={() => handleInspect(item)}
                 tabIndex={0}
