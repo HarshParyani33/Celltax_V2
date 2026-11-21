@@ -46,10 +46,10 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
   describe('AccessTerminal: Skip-Intro Interval & Timeout Lifecycle', () => {
     it('should cancel active interval and pending timeouts when Skip Intro is invoked', () => {
       let intervalCleared = false;
-      const activeInterval = setInterval(() => {}, 200);
+      const activeInterval = setInterval(() => { }, 200);
 
       const intervalRef = { current: activeInterval };
-      const timeoutsRef = { current: [setTimeout(() => {}, 500)] };
+      const timeoutsRef = { current: [setTimeout(() => { }, 500)] };
 
       const clearAllTimers = () => {
         if (intervalRef.current) {
@@ -106,9 +106,9 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
   describe('EvidenceModal: Focus Trap & Focus Restoration Invariants', () => {
     it('should correctly calculate focus wrap boundaries for Tab and Shift+Tab', () => {
       const focusableElements = [
-        { id: 'close-btn', focus: () => {} },
-        { id: 'inspect-image', focus: () => {} },
-        { id: 'modal-close-footer', focus: () => {} }
+        { id: 'close-btn', focus: () => { } },
+        { id: 'inspect-image', focus: () => { } },
+        { id: 'modal-close-footer', focus: () => { } }
       ];
 
       const first = focusableElements[0];
