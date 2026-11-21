@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Eye, 
@@ -14,6 +15,7 @@ import { EVIDENCE_COLLECTION } from '../data/evidence';
 import { EvidenceItem } from '../types';
 import { soundFx } from '../utils/audio';
 import { getPageTransition, usePrefersReducedMotion } from '../utils/animations';
+import { useProgression } from '../utils/progression';
 
 const FILTER_OPTIONS = [
   { id: 'all', label: 'ALL EXHIBITS', count: 3 },
@@ -26,7 +28,7 @@ export const EvidenceArchive: React.FC = () => {
   const shouldReduceMotion = usePrefersReducedMotion();
   const [selectedItem, setSelectedItem] = useState<EvidenceItem | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'photograph' | 'document' | 'artefact'>('all');
-  const [inspectedIds, setInspectedIds] = useState<Set<string>>(new Set());
+  const { inspectedIds, markInspected, isUnlocked, hasInspected } = useProgression();
 
   const filteredItems = EVIDENCE_COLLECTION.filter((item) => {
     if (activeFilter === 'all') return true;
@@ -36,7 +38,7 @@ export const EvidenceArchive: React.FC = () => {
   const handleInspect = (item: EvidenceItem) => {
     soundFx.playInspect();
     setSelectedItem(item);
-    setInspectedIds((prev) => new Set([...prev, item.id]));
+    markInspected(item.id);
   };
 
   return (
@@ -76,7 +78,7 @@ export const EvidenceArchive: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="px-4 py-2.5 rounded bg-investigation-forest border border-brass/30 font-mono text-xs text-brass-light flex items-center space-x-2">
               <Layers className="w-4 h-4 text-brass" />
-              <span>EXHIBITS INSPECTED: {inspectedIds.size} / {EVIDENCE_COLLECTION.length}</span>
+              <span>EXHIBITS INSPECTED: {inspectedIds.length} / {EVIDENCE_COLLECTION.length}</span>
             </div>
 
             <div className="px-3 py-2 rounded bg-investigation-surface border border-investigation-border text-xs font-mono text-investigation-muted flex items-center space-x-1.5">
@@ -129,7 +131,7 @@ export const EvidenceArchive: React.FC = () => {
         {/* Evidence Exhibits Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {filteredItems.map((item, index) => {
-            const hasInspected = inspectedIds.has(item.id);
+            const isItemInspected = hasInspected(item.id);
 
             return (
               <motion.div
@@ -197,7 +199,7 @@ export const EvidenceArchive: React.FC = () => {
                   </div>
 
                   {/* Inspected Marker */}
-                  {hasInspected && (
+                  {isItemInspected && (
                     <div className="absolute bottom-2 left-2 text-[10px] font-mono px-2 py-0.5 rounded bg-investigation-forest/90 border border-brass/40 text-brass flex items-center space-x-1">
                       <span>✓ INSPECTED</span>
                     </div>
@@ -241,25 +243,42 @@ export const EvidenceArchive: React.FC = () => {
           })}
         </div>
 
-        {/* Museum Phase Forward Architecture Preview Note */}
+        {/* Museum Phase Forward Architecture Preview / Unlocked Master Gallery Gateway */}
         <div className="mt-16 p-6 sm:p-8 rounded-lg border border-brass/30 bg-investigation-forest/50 relative overflow-hidden">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center space-x-2 text-xs font-mono text-brass uppercase">
                 <Sparkles className="w-4 h-4 text-brass" />
-                <span>CURATORIAL ARCHITECTURE // PHASE 2 PREPARED</span>
+                <span>{isUnlocked ? 'CURATORIAL ARCHITECTURE // UNLOCKED' : 'CURATORIAL ARCHITECTURE // PROGRESS RECORD'}</span>
               </div>
               <h4 className="text-base sm:text-lg font-serif font-bold text-parchment">
-                The Master Gallery Transformation
+                {isUnlocked ? 'The Master Curatorial Gallery Is Open' : 'The Master Gallery Transformation'}
               </h4>
               <p className="text-xs font-sans text-investigation-muted max-w-2xl leading-relaxed">
-                As additional evidence is authenticated and the common timeline resolved, 
-                the Department vault will reveal the private museum dedicated to this extraordinary life.
+                {isUnlocked
+                  ? 'All 3 confidential exhibits have been authenticated. The timeline has converged and the private museum dedicated to this extraordinary life is accessible.'
+                  : `Currently ${inspectedIds.length} of ${EVIDENCE_COLLECTION.length} exhibits authenticated. Examine all exhibits to unlock the connected timeline and curatorial gallery.`}
               </p>
             </div>
 
-            <div className="px-4 py-2 rounded border border-investigation-border bg-investigation-surface text-xs font-mono text-investigation-muted">
-              CURATORIAL ENGINE READY
+            <div className="flex items-center space-x-3 shrink-0">
+              <Link
+                to="/timeline"
+                onClick={() => soundFx.playKeypress()}
+                className="px-4 py-2 rounded border border-investigation-border hover:border-brass/50 bg-investigation-surface text-xs font-mono text-investigation-text transition-colors flex items-center space-x-1.5"
+              >
+                <span>TIMELINE</span>
+              </Link>
+              {isUnlocked && (
+                <Link
+                  to="/gallery"
+                  onClick={() => soundFx.playAccessGranted()}
+                  className="px-4 py-2 rounded bg-brass text-charcoal-900 font-mono text-xs font-bold hover:brightness-110 shadow-brass transition-all flex items-center space-x-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>ENTER GALLERY</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>

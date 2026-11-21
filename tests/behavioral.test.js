@@ -1,4 +1,4 @@
-import test, { describe, it } from 'node:test';
+import test, { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { EVIDENCE_COLLECTION, CASE_DOSSIER_DATA } from '../src/data/evidence.ts';
 import { validateClearanceCode } from '../src/utils/credentials.ts';
@@ -347,6 +347,125 @@ describe('Phase 1 Core Behavioral Logic Tests', () => {
         assert.ok(Array.isArray(item.anomalies));
         assert.ok(item.anomalies.length > 0);
       }
+    });
+  });
+
+  describe('Phase 2 Progression & Investigation Journey Logic', () => {
+    let mockStorage = {};
+
+    beforeEach(() => {
+      mockStorage = {};
+      globalThis.window = {
+        localStorage: {
+          getItem: (key) => mockStorage[key] ?? null,
+          setItem: (key, val) => { mockStorage[key] = String(val); },
+          removeItem: (key) => { delete mockStorage[key]; },
+        },
+        dispatchEvent: () => true,
+      };
+    });
+
+    it('should save and load progression correctly from storage', async () => {
+      const { saveInspectedIds, loadInspectedIds, PROGRESSION_STORAGE_KEY } = await import('../src/utils/progression.ts');
+      
+      saveInspectedIds(['ITEM-012-A', 'ITEM-012-B']);
+      assert.ok(mockStorage[PROGRESSION_STORAGE_KEY]);
+      assert.deepStrictEqual(loadInspectedIds(), ['ITEM-012-A', 'ITEM-012-B']);
+    });
+
+    it('should prevent duplicate inspection entries', async () => {
+      const { recordExhibitInspected, resetProgression, loadInspectedIds } = await import('../src/utils/progression.ts');
+      resetProgression();
+
+      recordExhibitInspected('ITEM-012-A');
+      recordExhibitInspected('ITEM-012-A');
+      recordExhibitInspected('ITEM-012-A');
+
+      const items = loadInspectedIds();
+      assert.strictEqual(items.length, 1);
+      assert.strictEqual(items[0], 'ITEM-012-A');
+    });
+
+    it('should correctly determine all-exhibits completion and percentage', async () => {
+      const { isGalleryUnlocked, calculateProgressionPercentage } = await import('../src/utils/progression.ts');
+
+      assert.strictEqual(isGalleryUnlocked([]), false);
+      assert.strictEqual(calculateProgressionPercentage([]), 0);
+
+      assert.strictEqual(isGalleryUnlocked(['ITEM-012-A']), false);
+      assert.strictEqual(calculateProgressionPercentage(['ITEM-012-A']), 33);
+
+      assert.strictEqual(isGalleryUnlocked(['ITEM-012-A', 'ITEM-012-B']), false);
+      assert.strictEqual(calculateProgressionPercentage(['ITEM-012-A', 'ITEM-012-B']), 67);
+
+      assert.strictEqual(isGalleryUnlocked(['ITEM-012-A', 'ITEM-012-B', 'ITEM-012-C']), true);
+      assert.strictEqual(calculateProgressionPercentage(['ITEM-012-A', 'ITEM-012-B', 'ITEM-012-C']), 100);
+    });
+
+    it('should identify remaining exhibits when gallery is locked', async () => {
+      const { getRemainingExhibitIds } = await import('../src/utils/progression.ts');
+
+      const remaining = getRemainingExhibitIds(['ITEM-012-A']);
+      assert.strictEqual(remaining.length, 2);
+      assert.strictEqual(remaining[0], 'ITEM-012-B');
+      assert.strictEqual(remaining[1], 'ITEM-012-C');
+
+      const noneRemaining = getRemainingExhibitIds(['ITEM-012-A', 'ITEM-012-B', 'ITEM-012-C']);
+      assert.strictEqual(noneRemaining.length, 0);
+    });
+
+    it('should calculate progressive timeline connections based on inspected exhibits', async () => {
+      const { getActiveTimelineConnections } = await import('../src/utils/progression.ts');
+
+      const conn0 = getActiveTimelineConnections([]);
+      assert.strictEqual(conn0.tier1Provenance, false);
+      assert.strictEqual(conn0.tier2Correspondence, false);
+      assert.strictEqual(conn0.tier3UnifiedSynthesis, false);
+      assert.strictEqual(conn0.totalInspected, 0);
+
+      const conn1 = getActiveTimelineConnections(['ITEM-012-A']);
+      assert.strictEqual(conn1.tier1Provenance, true);
+      assert.strictEqual(conn1.tier2Correspondence, false);
+      assert.strictEqual(conn1.tier3UnifiedSynthesis, false);
+      assert.strictEqual(conn1.totalInspected, 1);
+
+      const conn2 = getActiveTimelineConnections(['ITEM-012-A', 'ITEM-012-B']);
+      assert.strictEqual(conn2.tier1Provenance, true);
+      assert.strictEqual(conn2.tier2Correspondence, true);
+      assert.strictEqual(conn2.tier3UnifiedSynthesis, false);
+      assert.strictEqual(conn2.totalInspected, 2);
+
+      const conn3 = getActiveTimelineConnections(['ITEM-012-A', 'ITEM-012-B', 'ITEM-012-C']);
+      assert.strictEqual(conn3.tier1Provenance, true);
+      assert.strictEqual(conn3.tier2Correspondence, true);
+      assert.strictEqual(conn3.tier3UnifiedSynthesis, true);
+      assert.strictEqual(conn3.totalInspected, 3);
+    });
+
+    it('should handle reset progression properly', async () => {
+      const { saveInspectedIds, resetProgression, loadInspectedIds } = await import('../src/utils/progression.ts');
+
+      saveInspectedIds(['ITEM-012-A', 'ITEM-012-B', 'ITEM-012-C']);
+      assert.strictEqual(loadInspectedIds().length, 3);
+
+      resetProgression();
+      assert.strictEqual(loadInspectedIds().length, 0);
+    });
+
+    it('should safely handle malformed or corrupted localStorage data', async () => {
+      const { loadInspectedIds, PROGRESSION_STORAGE_KEY } = await import('../src/utils/progression.ts');
+
+      // Case 1: Corrupted non-JSON string
+      mockStorage[PROGRESSION_STORAGE_KEY] = 'INVALID_MALFORMED_JSON{{{';
+      assert.deepStrictEqual(loadInspectedIds(), []);
+
+      // Case 2: Valid JSON but not an array
+      mockStorage[PROGRESSION_STORAGE_KEY] = JSON.stringify({ count: 5 });
+      assert.deepStrictEqual(loadInspectedIds(), []);
+
+      // Case 3: Array containing invalid IDs and non-string types
+      mockStorage[PROGRESSION_STORAGE_KEY] = JSON.stringify(['UNKNOWN-999', 'ITEM-012-A', 42, null, true]);
+      assert.deepStrictEqual(loadInspectedIds(), ['ITEM-012-A']);
     });
   });
 

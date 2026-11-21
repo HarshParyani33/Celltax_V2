@@ -4,6 +4,8 @@ import { AnimatePresence } from 'framer-motion';
 import { AccessTerminal } from './pages/AccessTerminal';
 import { CaseBriefing } from './pages/CaseBriefing';
 import { EvidenceArchive } from './pages/EvidenceArchive';
+import { InvestigationTimeline } from './pages/InvestigationTimeline';
+import { MasterGallery } from './pages/MasterGallery';
 
 export const App: React.FC = () => {
   const location = useLocation();
@@ -17,6 +19,9 @@ export const App: React.FC = () => {
           <Route path="/briefing" element={<CaseBriefing />} />
           <Route path="/archive" element={<EvidenceArchive />} />
           <Route path="/evidence" element={<Navigate to="/archive" replace />} />
+          <Route path="/timeline" element={<InvestigationTimeline />} />
+          <Route path="/gallery" element={<MasterGallery />} />
+          <Route path="/museum" element={<Navigate to="/gallery" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>

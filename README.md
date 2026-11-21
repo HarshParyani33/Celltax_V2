@@ -17,18 +17,20 @@ The project blends atmospheric narrative design, tactile mechanical soundscapes,
 
 ---
 
-## Phase 1 Architecture & Screens
+## Architecture & Investigation Experience
 
-Phase 1 establishes the core engineering foundation and the first three confidential environments:
+The Department of Extraordinary Things is structured as a progressive narrative investigation divided across two integrated phases:
 
-### 1. Screen A: Access Terminal (`/` or `/access`)
+### Phase 1 Environments
+
+#### 1. Screen A: Access Terminal (`/` or `/access`)
 - **Atmospheric Terminal Node:** CRT scanlines, subtle radial vignettes, and paced typewriter text reveal.
 - **Interactive Controls:** "Skip Intro" control immediately drains typing intervals and reveals the clearance input.
 - **Narrative Gate Clearance:** Validates clearance inputs with clear accessible error alerts (`[role="alert"]`) and tactile keyboard feedback.
 - **Accepted Codes:** Accepts `EXTRAORDINARY`, `012`, `CASE012`, `CASE 012`, `CONFIDENTIAL`, `ARCHIVE`, `AGENT`, `DIRECTIVE12`, `INVESTIGATOR`, `OPEN`, `START` via shared pure validator (`validateClearanceCode`).
 - **Fictional Clearance Sequence:** Decryption animation, auditory chime feedback, and seamless transition into the briefing room.
 
-### 2. Screen B: Case Briefing (`/briefing`)
+#### 2. Screen B: Case Briefing (`/briefing`)
 - **Confidential Case Dossier:** Archival paper aesthetic, official classification stamps (`TOP SECRET // ULTRA`), and institutional crest.
 - **Case Metadata Matrix:**
   - **Case Number:** `CASE NO. 012`
@@ -37,7 +39,7 @@ Phase 1 establishes the core engineering foundation and the first three confiden
   - **Objective:** *Identify the connection between a collection of unusual artefacts.*
 - **Interactive Acceptance:** "Accept Investigation" protocol that unlocks the primary evidence repository.
 
-### 3. Screen C: Evidence Archive (`/archive`)
+#### 3. Screen C: Evidence Archive (`/archive`)
 - **Forensic Evidence Repository:** High-density catalog of unsealed exhibits with accession numbers, provenance metadata, and category filters.
 - **Accessible Category Filters:** Interactive button group (`role="group"`) with `aria-pressed` states for ALL, PHOTOGRAPHS, DISPATCHES, and ARTEFACTS.
 - **Exhibits Included:**
@@ -50,7 +52,43 @@ Phase 1 establishes the core engineering foundation and the first three confiden
   - Escape key dismissal.
   - Safe focus restoration to the triggering card button.
   - Optical zoom preview, material specifications, forensic ledger observations, and anomalous markers.
-- **Curatorial Architecture Stubs:** Pre-configured design tokens and state models for Phase 2 museum gallery transformations.
+  - Live inspection recording that feeds the progression engine.
+
+---
+
+### Phase 2 Environments & Master Curatorial Gallery
+
+#### 4. Screen D: Connected Investigation Timeline (`/timeline`)
+- **Chronological Rail:** Spatial timeline spanning three historical eras:
+  1. **1978 Era:** Coastal Observatory transmission (Item 012-A).
+  2. **1988 Era:** Weathered Dispatch Folio intercepted in courier transit (Item 012-B).
+  3. **Present Era:** Astrolithic Mechanism recovery and astronomical alignment (Item 012-C).
+- **Forensic Status Distinction:** Clearly distinguishes established physical facts from investigative hypotheses.
+- **Progressive Correlation Links:** Dynamic narrative connections that activate progressively as items are examined:
+  - *Link 1 (1+ items inspected):* Temporal alignment between the observatory and dispatch coordinates.
+  - *Link 2 (2+ items inspected):* Provenance correlation linking courier paths with celestial gear ratios.
+  - *Link 3 (3 items inspected):* Cryptographic convergence confirming all three anomalies point to a single subject.
+
+#### 5. Screen E: Master Curatorial Gallery (`/gallery` or `/museum`)
+- **Locked State (< 3 exhibits examined):**
+  - Forensic seal lock barrier and encrypted status banner.
+  - Live progression bar and percentage indicator.
+  - Remaining uninspected exhibits inventory with direct navigation back to the archive.
+- **Unlocked State (all 3 exhibits examined):**
+  - **Curatorial Editorial Essay:** "The Convergence of Extraordinary Anomalies" curatorial synthesis.
+  - **Triple Archival Pedestals:** Elevated museum exhibition mounts featuring spotlight lighting, brass label plaques, provenance metadata, and optical zoom toggles for all three exhibits.
+  - **Forensic Synthesis Matrix:** Core forensic deductions unifying the visual, documentary, and mechanical evidence.
+  - **Final Curatorial Revelation Drawer:** Interactive unsealing control marked by the Department seal, revealing the classified dedication ("To An Extraordinary Individual").
+  - **Accessible Investigation Reset:** Accessible confirmation dialog (`role="dialog"`, `aria-modal="true"`) allowing investigators to clear progression and restart the case.
+
+---
+
+### Investigation Progression Architecture (`src/utils/progression.ts`)
+
+- **State Persistence:** Inspected exhibit IDs are tracked and persisted in browser `localStorage` under `celltax_investigation_progression_v1` with an in-memory fallback.
+- **Idempotent Storage:** Duplicate inspection IDs are prevented automatically.
+- **Reactive Synchronization:** Exposes a custom `useProgression()` React hook that listens to both native storage events and internal dispatch notifications, ensuring instant synchronization across all routes and header badges without requiring external state management dependencies.
+- **Safe Degradation:** Gracefully catches and recovers from quota exhaustion, blocked storage permissions, or corrupt JSON payloads.
 
 ---
 
@@ -103,11 +141,11 @@ celltax_v2/
 ├── src/
 │   ├── components/             # Reusable UI elements (Header, Footer, EvidenceModal)
 │   ├── data/                   # Structured case dossiers and evidence collections
-│   ├── pages/                  # Screen A (AccessTerminal), Screen B (CaseBriefing), Screen C (EvidenceArchive)
+│   ├── pages/                  # Terminal, Briefing, EvidenceArchive, InvestigationTimeline, MasterGallery
 │   ├── styles/                 # Tailwind base layers, scanline textures, and scrollbars
 │   ├── tokens/                 # Investigation & Museum design tokens
 │   ├── types/                  # Strict TypeScript domain interfaces
-│   ├── utils/                  # Web Audio, animations, credentials, timers, and focus helpers
+│   ├── utils/                  # Audio, animations, credentials, timers, focus, progression
 │   ├── App.tsx                 # Route coordinator & cinematic transition wrapper
 │   └── main.tsx                # Application entrypoint
 ├── index.html
@@ -156,6 +194,28 @@ Visit `http://localhost:5173` in your browser.
 
 All verifications are executed automatically:
 1. **TypeScript Typecheck:** `npm run typecheck` passes with zero errors under strict mode.
-2. **Production Build:** `npm run build` compiles clean bundles.
-3. **Behavioral Suite:** `npm test` runs Node test runner against actual module exports (`src/utils/credentials.ts`, `src/utils/timers.ts`, `src/utils/focus.ts`, `src/utils/animations.ts`, `src/utils/audio.ts`, `src/data/evidence.ts`) verifying clearance validation, timer tracking lifecycles, focus-trap element filtering and wrapping boundaries, reduced-motion invariants, audio engine autoplay policies, and evidence catalog integrity. Distinguishes direct module tests from manually simulated behavior.
-4. **Real Browser CDP E2E:** `npm run test:e2e` validates the entire 3-screen progression, skip-intro line stability, error alerts, modal focus trapping, Escape key closing, trigger focus restoration, mobile (390px) and desktop (1440px) viewport overflow, image rendering, and asserts zero console errors, zero uncaught page exceptions, and zero failed network requests.
+2. **Production Build:** `npm run build` compiles clean bundles with full route code splitting and asset hashing.
+3. **Behavioral Suite (22 Unit Tests across 9 Suites):** `npm test` runs Node test runner against actual module exports:
+   - `src/utils/credentials.ts`: Case-insensitive whitespace-tolerant clearance validation.
+   - `src/utils/timers.ts`: Active interval and timeout lifecycle tracking and teardown.
+   - `src/utils/focus.ts`: Hidden-ancestor DOM filtering, boundary Tab wrapping, and safe focus restoration.
+   - `src/utils/animations.ts`: Strict reduced-motion compliance (zeroing translation, suppressing delays).
+   - `src/utils/audio.ts`: Autoplay compliance (starts muted by default).
+   - `src/data/evidence.ts`: Catalog integrity and media asset parity.
+   - `src/utils/progression.ts`: Persistent storage synchronization, duplicate prevention, completion percentage, remaining exhibits calculation, progressive timeline links, reset handler, and corrupted `localStorage` recovery.
+4. **Architectural & Integration Checks (32 Tests):** Validates asset generation, non-zero image bytecounts, WebP and SVG links, ARIA dialog roles, skip-intro controls, and alert roles.
+5. **Real Browser CDP E2E (12 Stages):** `npm run test:e2e` launches real headless Chromium and validates:
+   - Typewriter skip-intro interval cancellation.
+   - Narrative clearance gate error handling and navigation.
+   - Briefing acceptance.
+   - Evidence category filtering.
+   - Modal bidirectional Tab focus trapping, Escape key closing, and trigger focus restoration.
+   - Progression accumulation across individual exhibit inspections.
+   - Investigation Timeline node rendering and progressive correlation links.
+   - Locked Master Gallery enforcement (progress bar + remaining uninspected items breakdown).
+   - Master Gallery unlocking upon examining all 3 exhibits.
+   - Final curatorial revelation unsealing drawer ("To An Extraordinary Individual").
+   - LocalStorage progression persistence across full browser reload.
+   - Progression reset confirmation dialog and archive return.
+   - Desktop (1440px) and Mobile (390px) responsive layout rendering without horizontal overflow.
+   - Zero console errors, zero uncaught page exceptions, and zero failed network requests.

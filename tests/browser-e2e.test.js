@@ -67,7 +67,6 @@ function findBrowserPath() {
     }
   }
 
-  // If no browser is found, fail with actionable instructions (never silently skip!)
   throw new Error(
     'No supported Chromium browser found.\n' +
     'Checked CHROME_BIN / BROWSER_PATH environment variables, standard OS installation paths, and system PATH.\n' +
@@ -167,19 +166,18 @@ async function getDebuggerUrl() {
 }
 
 async function run() {
-  // Ensure screenshot output directory exists
   const screenshotDir = path.resolve('public', 'screenshots');
   if (!fs.existsSync(screenshotDir)) {
     fs.mkdirSync(screenshotDir, { recursive: true });
   }
 
-  // 1. Check preview/dev server pre-flight HTTP response
-  console.log(`[E2E 1/9] Checking preview server readiness on port 5173...`);
+  // 1. Check server readiness
+  console.log(`[E2E 1/12] Checking preview server readiness on port 5173...`);
   await checkServerReady(5173);
   console.log('  -> Server is ready and answering with HTTP 200-399 on http://localhost:5173');
 
-  // 2. Launch browser with CDP debugging port
-  console.log(`[E2E 2/9] Launching Chromium browser (${BROWSER_PATH}) on port ${DEBUG_PORT}...`);
+  // 2. Launch browser
+  console.log(`[E2E 2/12] Launching Chromium browser (${BROWSER_PATH}) on port ${DEBUG_PORT}...`);
   chromeProc = spawn(BROWSER_PATH, [
     '--headless=new',
     `--remote-debugging-port=${DEBUG_PORT}`,
@@ -236,8 +234,8 @@ async function run() {
     await wait(200);
   }
 
-  // 3. Test Terminal Screen & Skip Intro Interval Teardown
-  console.log('[E2E 3/9] Testing Screen A: Access Terminal & Skip Intro typing stability...');
+  // 3. Test Terminal Screen & Skip Intro
+  console.log('[E2E 3/12] Testing Screen A: Access Terminal & Skip Intro typing stability...');
   await wait(400);
   const initialSkipBtn = await evalInBrowser(`Boolean(document.querySelector('button[title="Skip intro typing"]'))`);
   if (initialSkipBtn) {
@@ -248,7 +246,6 @@ async function run() {
   const isInputVisible = await evalInBrowser(`Boolean(document.querySelector('#clearance-input'))`);
   if (!isInputVisible) throw new Error('Clearance input not visible after skip intro');
 
-  // Verify interval is completely stopped: line count must be 8 and stay exactly 8
   const initialLineCount = await evalInBrowser(`document.querySelectorAll('[aria-live="polite"] > div').length`);
   if (initialLineCount !== 8) {
     throw new Error(`Expected exactly 8 terminal lines after skip intro, got ${initialLineCount}`);
@@ -261,7 +258,7 @@ async function run() {
   console.log(`  -> Typewriter interval strictly halted on skip intro (line count stable at ${postWaitLineCount})`);
 
   // 4. Test Invalid Credential Feedback
-  console.log('[E2E 4/9] Testing invalid credential error feedback...');
+  console.log('[E2E 4/12] Testing invalid credential error feedback...');
   await evalInBrowser(`(() => {
     const input = document.querySelector('#clearance-input');
     const protoSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
@@ -282,7 +279,7 @@ async function run() {
   console.log('  -> Rejected invalid code with accessible alert: ' + errorAlert);
 
   // 5. Test Valid Credential & Navigation to Briefing
-  console.log('[E2E 5/9] Testing valid credential and transition to Briefing...');
+  console.log('[E2E 5/12] Testing valid credential and transition to Briefing...');
   await evalInBrowser(`(() => {
     const input = document.querySelector('#clearance-input');
     const protoSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
@@ -300,7 +297,7 @@ async function run() {
   console.log('  -> Authenticated successfully, navigated to /briefing');
 
   // 6. Test Case Briefing & Transition to Archive
-  console.log('[E2E 6/9] Testing Screen B: Case Briefing & Accept Investigation...');
+  console.log('[E2E 6/12] Testing Screen B: Case Briefing & Accept Investigation...');
   const hasBriefingText = await evalInBrowser(`document.body.innerText.includes("CASE NO. 012")`);
   if (!hasBriefingText) throw new Error('Briefing content missing Case No. 012');
 
@@ -330,7 +327,7 @@ async function run() {
   console.log('  -> Accepted investigation, navigated to /archive');
 
   // 7. Test Evidence Archive Filtering
-  console.log('[E2E 7/9] Testing Screen C: Evidence filtering buttons...');
+  console.log('[E2E 7/12] Testing Screen C: Evidence filtering buttons...');
   if (initialCardsCount !== 3) throw new Error(`Expected 3 evidence cards, got ${initialCardsCount}`);
 
   // Click photographs filter
@@ -351,8 +348,8 @@ async function run() {
   })()`);
   await wait(300);
 
-  // 8. Test Evidence Modal, Focus Trapping, Escape Key, Focus Restoration
-  console.log('[E2E 8/9] Testing Modal dialog, focus trapping, Escape key, and focus restoration...');
+  // 8. Test Modal dialog, Focus Trapping, Tab Wrapping, Escape Key, Focus Restoration
+  console.log('[E2E 8/12] Testing Modal dialog, focus trapping, bidirectional Tab wrapping, and focus restoration...');
   await evalInBrowser(`(() => {
     const firstCard = document.querySelector('[role="button"][aria-label^="Inspect evidence item"]');
     if (firstCard) {
@@ -370,7 +367,7 @@ async function run() {
     Boolean(dialog && document.activeElement && dialog.contains(document.activeElement));
   `);
   if (!isFocusInside) throw new Error('Focus is not contained inside the dialog on open');
-  console.log('  -> Modal opened with valid ARIA semantics; focus trapped inside dialog');
+  console.log('  -> Modal opened with valid ARIA semantics; initial focus trapped inside dialog');
 
   // Test forward Tab wrapping from last element to first element
   const forwardWrapResult = await evalInBrowser(`(() => {
@@ -393,13 +390,11 @@ async function run() {
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
 
-    // Focus the last genuinely focusable element
     last.focus();
     if (document.activeElement !== last) {
       return { success: false, reason: 'Failed to focus last element before Tab' };
     }
 
-    // Dispatch bubbling, cancelable Tab event
     const tabEvent = new KeyboardEvent('keydown', {
       key: 'Tab',
       code: 'Tab',
@@ -411,12 +406,10 @@ async function run() {
     });
     const dispatchResult = last.dispatchEvent(tabEvent);
 
-    // Verify event was handled and default was prevented
     if (dispatchResult || !tabEvent.defaultPrevented) {
       return { success: false, reason: 'Tab event default navigation was not prevented' };
     }
 
-    // Verify document.activeElement became the first focusable element
     if (document.activeElement !== first) {
       return {
         success: false,
@@ -449,13 +442,11 @@ async function run() {
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
 
-    // Focus the first genuinely focusable element
     first.focus();
     if (document.activeElement !== first) {
       return { success: false, reason: 'Failed to focus first element before Shift+Tab' };
     }
 
-    // Dispatch bubbling, cancelable Shift+Tab event
     const shiftTabEvent = new KeyboardEvent('keydown', {
       key: 'Tab',
       code: 'Tab',
@@ -467,12 +458,10 @@ async function run() {
     });
     const dispatchResult = first.dispatchEvent(shiftTabEvent);
 
-    // Verify event was handled and default was prevented
     if (dispatchResult || !shiftTabEvent.defaultPrevented) {
       return { success: false, reason: 'Shift+Tab event default navigation was not prevented' };
     }
 
-    // Verify document.activeElement became the last focusable element
     if (document.activeElement !== last) {
       return {
         success: false,
@@ -493,7 +482,6 @@ async function run() {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   `);
 
-  // Wait for modal exit animation to complete
   for (let i = 0; i < 20; i++) {
     const dialogStillExists = await evalInBrowser(`Boolean(document.querySelector('[role="dialog"]'))`);
     if (!dialogStillExists) break;
@@ -511,8 +499,157 @@ async function run() {
   }
   console.log('  -> Escape key closed modal. Focus restored to trigger button: true');
 
-  // 9. Test Viewports, Responsiveness, and Broken Images
-  console.log('[E2E 9/9] Verifying mobile/desktop viewports and image rendering...');
+  // 9. Test Progression Tracking & Locked Timeline / Gallery Access
+  console.log('[E2E 9/12] Testing Progression & Locked Timeline / Gallery states...');
+  const progressText1 = await evalInBrowser(`document.body.innerText`);
+  if (!progressText1.includes('1 / 3') && !progressText1.includes('1/3')) {
+    throw new Error('Progress counter did not reflect first inspected item (expected 1/3)');
+  }
+  console.log('  -> First exhibit inspection recorded in progression: 1 of 3');
+
+  // Inspect second exhibit (ITEM-012-B)
+  await evalInBrowser(`(() => {
+    const cards = document.querySelectorAll('[role="button"][aria-label^="Inspect evidence item"]');
+    if (cards[1]) {
+      cards[1].focus();
+      cards[1].click();
+    }
+  })()`);
+  await wait(500);
+  await evalInBrowser(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));`);
+  await wait(400);
+
+  const progressText2 = await evalInBrowser(`document.body.innerText`);
+  if (!progressText2.includes('2 / 3') && !progressText2.includes('2/3')) {
+    throw new Error('Progress counter did not reflect second inspected item (expected 2/3)');
+  }
+  console.log('  -> Second exhibit inspection recorded in progression: 2 of 3');
+
+  // Navigate to Timeline
+  await evalInBrowser(`(() => {
+    const timelineLink = Array.from(document.querySelectorAll('a')).find(a => a.textContent.includes('TIMELINE'));
+    if (timelineLink) timelineLink.click();
+  })()`);
+  await wait(600);
+
+  const currentTimelinePath = await evalInBrowser(`window.location.pathname`);
+  if (currentTimelinePath !== '/timeline') {
+    throw new Error(`Expected navigation to /timeline, got ${currentTimelinePath}`);
+  }
+  const timelineHeading = await evalInBrowser(`document.body.innerText.includes("THE CONNECTED INVESTIGATION TIMELINE")`);
+  if (!timelineHeading) throw new Error('Timeline page content missing');
+  console.log('  -> Navigated to /timeline; verified chronological nodes and progressive links');
+
+  // Attempt direct navigation to /gallery while locked
+  await evalInBrowser(`(() => {
+    const galleryLink = Array.from(document.querySelectorAll('a')).find(a => a.textContent.includes('MASTER GALLERY'));
+    if (galleryLink) galleryLink.click();
+  })()`);
+  await wait(600);
+
+  const galleryPathLocked = await evalInBrowser(`window.location.pathname`);
+  if (galleryPathLocked !== '/gallery') throw new Error(`Expected path /gallery, got ${galleryPathLocked}`);
+  const isLockedTitleVisible = await evalInBrowser(`document.body.innerText.includes("The Master Curatorial Gallery Is Sealed")`);
+  if (!isLockedTitleVisible) throw new Error('Locked gallery title not displayed when < 3 inspected');
+  const isRemainingListed = await evalInBrowser(`document.body.innerText.includes("ARC-012-M") || document.body.innerText.includes("Astrolithic Dial")`);
+  if (!isRemainingListed) throw new Error('Remaining unexamined exhibit was not listed on locked gallery page');
+  console.log('  -> Locked gallery correctly blocks access, shows progress (67%), and lists remaining exhibit');
+
+  // 10. Unlocking Master Gallery
+  console.log('[E2E 10/12] Unlocking Master Curatorial Gallery by inspecting 3rd exhibit...');
+  await evalInBrowser(`(() => {
+    const archiveLink = Array.from(document.querySelectorAll('a')).find(a => a.textContent.includes('RETURN TO ARCHIVE'));
+    if (archiveLink) archiveLink.click();
+  })()`);
+  await wait(600);
+
+  // Inspect third exhibit (ITEM-012-C)
+  await evalInBrowser(`(() => {
+    const cards = document.querySelectorAll('[role="button"][aria-label^="Inspect evidence item"]');
+    if (cards[2]) {
+      cards[2].focus();
+      cards[2].click();
+    }
+  })()`);
+  await wait(500);
+  await evalInBrowser(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));`);
+  await wait(400);
+
+  // Verify full completion on Archive
+  const progressText3 = await evalInBrowser(`document.body.innerText`);
+  if (!progressText3.includes('3 / 3') && !progressText3.includes('3/3')) {
+    throw new Error('Progress counter did not reflect third inspected item (expected 3/3)');
+  }
+  const hasEnterGalleryBtn = await evalInBrowser(`Boolean(Array.from(document.querySelectorAll('a')).find(a => a.textContent.includes('ENTER GALLERY')))`);
+  if (!hasEnterGalleryBtn) throw new Error('ENTER GALLERY button did not appear after 3 exhibits inspected');
+  console.log('  -> All 3 exhibits authenticated; ENTER GALLERY unlock trigger visible');
+
+  // Navigate to Master Gallery
+  await evalInBrowser(`(() => {
+    const enterBtn = Array.from(document.querySelectorAll('a')).find(a => a.textContent.includes('ENTER GALLERY'));
+    if (enterBtn) enterBtn.click();
+  })()`);
+  await wait(800);
+
+  const galleryPathUnlocked = await evalInBrowser(`window.location.pathname`);
+  if (galleryPathUnlocked !== '/gallery') throw new Error(`Expected /gallery, got ${galleryPathUnlocked}`);
+  const isUnlockedTitleVisible = await evalInBrowser(`document.body.innerText.includes("The Master Curatorial Gallery") && !document.body.innerText.includes("Is Sealed")`);
+  if (!isUnlockedTitleVisible) throw new Error('Master gallery failed to unlock after all 3 exhibits inspected');
+  console.log('  -> Master Curatorial Gallery successfully unlocked and rendered');
+
+  // Unseal final narrative revelation
+  await evalInBrowser(`(() => {
+    const unsealBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('UNSEAL FINAL CURATORIAL REVELATION'));
+    if (unsealBtn) unsealBtn.click();
+  })()`);
+  await wait(600);
+
+  const isDedicationVisible = await evalInBrowser(`document.body.innerText.includes("To An Extraordinary Individual")`);
+  if (!isDedicationVisible) throw new Error('Final narrative dedication was not unsealed');
+  console.log('  -> Final narrative revelation unsealed successfully ("To An Extraordinary Individual")');
+
+  // 11. Persistence Across Refresh & Reset Action
+  console.log('[E2E 11/12] Testing persistence across page reload & reset investigation action...');
+  await cdpSend('Page.reload');
+  await wait(1400);
+
+  // Ensure React app remounted after reload
+  for (let i = 0; i < 20; i++) {
+    const isMounted = await evalInBrowser(`Boolean(document.querySelector('#root') && document.querySelector('#root').children.length > 0)`);
+    if (isMounted) break;
+    await wait(200);
+  }
+
+  const postReloadUnlocked = await evalInBrowser(`document.body.innerText.includes("The Master Curatorial Gallery") && !document.body.innerText.includes("Is Sealed")`);
+  if (!postReloadUnlocked) throw new Error('Gallery locked after page reload! (localStorage persistence failed)');
+  console.log('  -> Progression & unlocked gallery state strictly preserved across browser reload');
+
+  // Test reset progression confirmation modal
+  await evalInBrowser(`(() => {
+    const resetBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('RESET INVESTIGATION'));
+    if (resetBtn) resetBtn.click();
+  })()`);
+  await wait(400);
+
+  const isResetModalOpen = await evalInBrowser(`Boolean(document.querySelector('[role="dialog"][aria-modal="true"]'))`);
+  if (!isResetModalOpen) throw new Error('Reset confirmation modal failed to open');
+
+  // Confirm reset
+  await evalInBrowser(`(() => {
+    const confirmBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('RESET PROGRESSION'));
+    if (confirmBtn) confirmBtn.click();
+  })()`);
+  await wait(800);
+
+  const postResetPath = await evalInBrowser(`window.location.pathname`);
+  if (postResetPath !== '/archive') throw new Error(`Expected navigation to /archive after reset, got ${postResetPath}`);
+  const postResetText = await evalInBrowser(`document.body.innerText`);
+  const isResetToZero = postResetText.includes('0 / 3') || postResetText.includes('0/3');
+  if (!isResetToZero) throw new Error('Progress counter did not reset to 0 after reset confirmation');
+  console.log('  -> Investigation reset verified: returned to archive with 0 / 3 exhibits');
+
+  // 12. Test Viewports, Responsiveness, and Broken Images
+  console.log('[E2E 12/12] Verifying mobile/desktop viewports and image rendering...');
 
   // Check all images rendered without errors
   const imagesOk = await evalInBrowser(`
