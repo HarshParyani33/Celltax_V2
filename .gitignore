@@ -6,3 +6,4 @@ dist/
 build/
 *.log
 temp_chrome_user_dir/
+temp_chrome_*/

@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/behavioral.test.js && node tests/phase1-validation.js",
-    "test:e2e": "node tests/browser-e2e.test.js"
+    "test:e2e": "node tests/browser-e2e.test.js",
+    "capture:views": "node scripts/capture-all-views.js"
   },
   "dependencies": {
     "clsx": "^2.1.1",
