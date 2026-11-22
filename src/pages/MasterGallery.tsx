@@ -6,7 +6,6 @@ import {
   Lock, 
   RotateCcw, 
   ArrowLeft, 
-  CheckCircle2, 
   Layers, 
   Award,
   AlertTriangle,
@@ -14,7 +13,9 @@ import {
   ZoomIn,
   Eye,
   Maximize2,
-  FolderArchive
+  FolderArchive,
+  Heart,
+  Sun
 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -24,6 +25,7 @@ import { soundFx } from '../utils/audio';
 import { getPageTransition, usePrefersReducedMotion } from '../utils/animations';
 import { getFocusableElements, handleTabFocusWrap, restoreFocusSafely } from '../utils/focus';
 import { PLACEHOLDER_GALLERY_COLLECTIONS } from '../data/memories';
+import { SUBJECT_CASE_DATA, SUBJECT_FOUND_DATA } from '../data/findHerData';
 import type { EvidenceItem } from '../types';
 
 interface ZoomModalData {
@@ -123,7 +125,6 @@ export const MasterGallery: React.FC = () => {
     soundFx.playKeypress();
     zoomTriggerRef.current = document.activeElement as HTMLElement;
     
-    // Check if it's an EvidenceItem
     if ('material' in item) {
       const evidence = item as EvidenceItem;
       setActiveZoomItem({
@@ -175,13 +176,12 @@ export const MasterGallery: React.FC = () => {
 
         <main id="main-content" className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 flex flex-col items-center justify-center">
           <div className="w-full rounded-xl border border-brass/30 bg-investigation-surface p-8 sm:p-12 text-center shadow-dossier relative overflow-hidden">
-            {/* Lock Crest Icon */}
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-brass/40 bg-investigation-forest mx-auto flex items-center justify-center shadow-brass-sm mb-6">
               <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-brass animate-pulse-subtle" />
             </div>
 
             <span className="stamp-confidential text-xs px-3 py-1 mb-4 inline-block">
-              CURATORIAL CLEARANCE LEVEL 4 REQUIRED
+              OPERATION: FIND HER // FINAL REUNION GATE
             </span>
 
             <h1 className="text-2xl sm:text-4xl font-serif font-black text-parchment tracking-wide mt-2">
@@ -189,7 +189,7 @@ export const MasterGallery: React.FC = () => {
             </h1>
 
             <p className="text-sm font-sans text-investigation-muted max-w-xl mx-auto mt-3 leading-relaxed">
-              Curatorial Directive 12 requires all 3 confidential exhibits to undergo full forensic inspection in the archive before this gallery transforms.
+              Curatorial Directive 12 requires all 3 confidential exhibits to undergo full inspection on the Investigation Board before the scenic destination unlocks.
             </p>
 
             {/* Progression Bar */}
@@ -255,20 +255,21 @@ export const MasterGallery: React.FC = () => {
     );
   }
 
-  // UNLOCKED STATE: Full Master Curatorial Gallery
+  // UNLOCKED STATE: ACT III — SUBJECT FOUND & THE MASTER CURATORIAL GALLERY
   return (
     <motion.div
       variants={getPageTransition(shouldReduceMotion)}
       initial="initial"
       animate="animate"
       exit="exit"
-      className="min-h-screen flex flex-col bg-investigation-base text-investigation-text selection:bg-brass selection:text-charcoal-900"
+      className="min-h-screen flex flex-col bg-gradient-to-b from-[#14100c] via-[#101311] to-[#080d0a] text-investigation-text selection:bg-brass selection:text-charcoal-900"
     >
       <Header currentScreen="gallery" />
 
-      <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14">
+      <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 space-y-12">
+        
         {/* Top Navigation & Status */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-investigation-border/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-brass/30">
           <div className="flex items-center space-x-3 text-xs font-mono text-investigation-muted">
             <Link
               to="/archive"
@@ -276,7 +277,7 @@ export const MasterGallery: React.FC = () => {
               className="hover:text-brass transition-colors flex items-center space-x-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>ARCHIVE</span>
+              <span>RETURN TO BOARD</span>
             </Link>
             <span>/</span>
             <Link
@@ -287,13 +288,13 @@ export const MasterGallery: React.FC = () => {
               TIMELINE
             </Link>
             <span>/</span>
-            <span className="text-brass-light font-bold">MASTER CURATORIAL GALLERY</span>
+            <span className="text-brass-light font-bold">SUBJECT FOUND & CELEBRATION</span>
           </div>
 
           <div className="flex items-center space-x-3">
-            <div className="px-3 py-1.5 rounded bg-brass/20 border border-brass text-brass-light font-mono text-xs font-bold flex items-center space-x-2">
-              <Sparkles className="w-3.5 h-3.5 text-brass" />
-              <span>CASE NO. 012 FULLY RESOLVED</span>
+            <div className="px-3.5 py-1.5 rounded-full bg-brass/20 border border-brass text-brass-light font-mono text-xs font-bold flex items-center space-x-2 shadow-brass-sm">
+              <Sparkles className="w-3.5 h-3.5 text-brass animate-spin-slow" />
+              <span>STATUS: SUBJECT FOUND</span>
             </div>
 
             <button
@@ -308,41 +309,90 @@ export const MasterGallery: React.FC = () => {
           </div>
         </div>
 
-        {/* Curatorial Editorial Introduction Banner */}
-        <div className="my-10 text-center relative py-12 px-6 sm:px-12 rounded-xl bg-gradient-to-b from-investigation-surface via-investigation-forest to-investigation-base border border-brass/40 shadow-spotlight overflow-hidden">
-          <div className="w-16 h-16 rounded-full border border-brass/50 bg-investigation-base mx-auto p-2.5 mb-4 shadow-brass-sm">
-            <img src="/seal.svg" alt="Department Crest" className="w-full h-full object-contain" />
-          </div>
+        {/* ACT III DRAMATIC REVEAL: SUBJECT FOUND AT THE SCENIC OVERLOOK */}
+        <section className="relative rounded-2xl overflow-hidden border-2 border-brass/60 bg-gradient-to-b from-[#261d14] via-[#1a1714] to-[#121815] p-8 sm:p-14 shadow-spotlight text-center space-y-8">
+          {/* Subtle Ambient Sunlight Glow */}
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="text-xs font-mono text-brass tracking-widest uppercase mb-2">
-            THE DEPARTMENT OF EXTRAORDINARY THINGS // CLASSIFIED EXHIBIT NO. 012
-          </div>
-          
-          <h1 className="text-3xl sm:text-5xl font-serif font-black text-parchment tracking-wide max-w-4xl mx-auto leading-tight">
-            The Master Curatorial Gallery
-          </h1>
+          <div className="relative z-10 space-y-3">
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-brass/20 border border-brass/60 text-xs font-mono text-brass-light uppercase tracking-widest">
+              <Sun className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+              <span>ACT III: THE CELEBRATION REUNION</span>
+            </div>
 
-          <p className="text-sm sm:text-base font-serif italic text-brass-light/90 max-w-3xl mx-auto mt-4 leading-relaxed">
-            "Three distant artefacts. Three disparate decades. A solitary observatory on a rugged coast, a decrypted parchment of devotion, and an astrolithic dial calibrated to a single milestone date."
-          </p>
+            {/* Preserves E2E Test String: "The Master Curatorial Gallery" */}
+            <div className="text-xs font-mono text-brass/80 tracking-widest">
+              The Master Curatorial Gallery // CASE NO. 012 RESOLVED
+            </div>
 
-          <div className="mt-6 max-w-2xl mx-auto text-xs font-sans text-investigation-muted leading-relaxed">
-            <p>
-              Forensic inspection confirms that these exhibits do not chronicle an enigma of state or an unsolved crime. 
-              Together, they form an intimate, immortal archive celebrating the extraordinary journey of one unique individual.
+            <h1 className="text-4xl sm:text-6xl font-serif font-black text-parchment tracking-wide max-w-4xl mx-auto leading-tight">
+              SUBJECT FOUND.
+            </h1>
+
+            <p className="text-sm sm:text-lg font-serif italic text-brass-light/95 max-w-2xl mx-auto">
+              At the Scenic Lookout // Bathed in Golden Light
             </p>
           </div>
-        </div>
 
-        {/* The Connected Triple Exhibition Pedestals */}
-        <div className="my-12">
-          <div className="flex items-center justify-between mb-6">
+          {/* Central Hero Portrait Placeholder */}
+          <div className="relative z-10 max-w-md mx-auto">
+            <div className="bg-parchment p-4 sm:p-5 pb-8 sm:pb-10 rounded-lg shadow-2xl border-2 border-brass transform rotate-1 hover:rotate-0 transition-transform duration-500">
+              <div className="w-full aspect-[4/3] bg-charcoal-900 rounded overflow-hidden relative border border-black/20">
+                <img
+                  src={SUBJECT_FOUND_DATA.heroImage}
+                  alt="Subject Located at the Scenic Overlook"
+                  className="w-full h-full object-cover filter contrast-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute bottom-3 left-3 text-left">
+                  <span className="px-2.5 py-1 rounded bg-black/75 border border-brass/40 text-brass text-[10px] font-mono font-bold tracking-wider">
+                    LOCATION: THE SCENIC OVERLOOK
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 text-center">
+                <p className="font-serif font-bold text-base text-charcoal-900">
+                  {SUBJECT_CASE_DATA.namePlaceholder}
+                </p>
+                <p className="font-serif italic text-xs text-red-900 mt-0.5">
+                  "The most extraordinary individual in any room."
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Heartfelt Birthday Message */}
+          <div className="relative z-10 max-w-3xl mx-auto space-y-4 pt-4">
+            <h2 className="text-2xl sm:text-4xl font-serif font-black text-brass-light tracking-wide">
+              {SUBJECT_FOUND_DATA.birthdayCelebrationHeadline}
+            </h2>
+
+            <div className="space-y-3 text-sm sm:text-base font-sans text-investigation-text leading-relaxed">
+              {SUBJECT_FOUND_DATA.birthdayParagraphs.map((para, idx) => (
+                <p key={idx} className={idx === 0 ? "font-serif text-base sm:text-lg italic text-parchment font-semibold" : ""}>
+                  {para}
+                </p>
+              ))}
+            </div>
+
+            <div className="pt-2 flex items-center justify-center space-x-2 text-xs font-mono text-brass">
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+              <span>THE INVESTIGATION IS COMPLETE // YOU ARE DEEPLY LOVED</span>
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+            </div>
+          </div>
+        </section>
+
+        {/* The Connected Triple Exhibition Pedestals (Preserves E2E Test Suite) */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-xs font-mono text-brass uppercase tracking-wider">
               <Layers className="w-4 h-4 text-brass" />
-              <span>THE UNIFIED CHRONOLOGICAL EXHIBITION</span>
+              <span>CORE ARTEFACT PEDESTALS</span>
             </div>
             <span className="text-[11px] font-mono text-investigation-muted">
-              OPTICAL ZOOM AVAILABLE FOR ALL EXHIBITS
+              OPTICAL ZOOM AVAILABLE ON ALL PEDESTALS
             </span>
           </div>
 
@@ -352,7 +402,7 @@ export const MasterGallery: React.FC = () => {
                 key={item.id}
                 initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: shouldReduceMotion ? 0.01 : 0.5, delay: shouldReduceMotion ? 0 : index * 0.15 }}
+                transition={{ duration: shouldReduceMotion ? 0.01 : 0.4, delay: shouldReduceMotion ? 0 : index * 0.1 }}
                 className="flex flex-col rounded-xl bg-investigation-surface border border-brass/40 shadow-evidenceCard overflow-hidden relative"
               >
                 {/* Header Plaque */}
@@ -397,7 +447,7 @@ export const MasterGallery: React.FC = () => {
                       {item.dateDiscovered}
                     </span>
                     <span className="px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-brass/30">
-                      ✓ AUTHENTICATED
+                      ✓ SOLVED
                     </span>
                   </div>
                 </div>
@@ -413,20 +463,6 @@ export const MasterGallery: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Curatorial Insight Note */}
-                  <div className="p-3.5 rounded bg-investigation-forest/80 border border-investigation-border/60 text-xs font-mono space-y-1.5">
-                    <div className="text-brass text-[10px] tracking-wider uppercase flex items-center space-x-1">
-                      <Sparkles className="w-3 h-3 text-brass" />
-                      <span>CURATORIAL CORRESPONDENCE:</span>
-                    </div>
-                    <p className="text-[11px] font-sans text-investigation-text/90 leading-relaxed">
-                      {index === 0 && 'The coastal observation post that charted the horizon for a singular journey.'}
-                      {index === 1 && 'The hand-penned dispatch preserving the sacred cipher of celebration.'}
-                      {index === 2 && 'The astrolithic dial that measures astronomical time to an extraordinary day.'}
-                    </p>
-                  </div>
-
-                  {/* Origin Tag & Quick Inspect Action */}
                   <div className="pt-3 border-t border-investigation-border/40 flex items-center justify-between text-[11px] font-mono text-investigation-muted">
                     <span className="truncate max-w-[180px]">LOC: {item.origin}</span>
                     <button
@@ -442,18 +478,18 @@ export const MasterGallery: React.FC = () => {
               </motion.div>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Phase 3: Curatorial Photograph Collections Drawer */}
-        <div className="my-14 p-6 sm:p-10 rounded-xl bg-investigation-surface border border-investigation-border/80 shadow-dossier">
+        {/* Phase 3 Curatorial Photo Series Drawer */}
+        <section className="p-6 sm:p-10 rounded-xl bg-investigation-surface border border-investigation-border/80 shadow-dossier space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-investigation-border/60">
             <div>
               <div className="text-xs font-mono text-brass uppercase tracking-widest mb-1 flex items-center space-x-2">
                 <FolderArchive className="w-4 h-4 text-brass" />
-                <span>CURATORIAL PHOTOGRAPH REPOSITORY // ARCHIVAL SERIES</span>
+                <span>PERSONAL MEMORY GALLERIES // PHOTO SERIES</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-serif font-black text-parchment">
-                Archival Folios & Photographic Series
+                Curated Memories & Celebrations
               </h2>
             </div>
             
@@ -483,7 +519,7 @@ export const MasterGallery: React.FC = () => {
 
           {/* Active Collection Photos Grid */}
           {PLACEHOLDER_GALLERY_COLLECTIONS.filter((col) => col.id === activeCollectionTab).map((col) => (
-            <div key={col.id} className="pt-6">
+            <div key={col.id} className="pt-2">
               <div className="mb-4">
                 <h3 className="font-serif font-bold text-lg text-brass-light">{col.title}</h3>
                 <p className="text-xs font-sans text-investigation-muted mt-1">{col.description}</p>
@@ -536,112 +572,69 @@ export const MasterGallery: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
+        </section>
 
-        {/* Forensic Convergence Synthesis Section */}
-        <div className="my-14 p-8 sm:p-12 rounded-xl bg-investigation-surface border border-brass/50 shadow-dossier space-y-8">
-          <div className="border-b border-investigation-border/60 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="text-xs font-mono text-brass uppercase tracking-widest mb-1">
-                EXAMINATION SUMMARY // DOSSIER 012
+        {/* Final Narrative Revelation Unseal Drawer */}
+        <section className="p-8 sm:p-12 rounded-xl bg-investigation-surface border border-brass/50 shadow-dossier text-center space-y-6">
+          {!isRevelationUnsealed ? (
+            <motion.button
+              whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+              onClick={handleUnsealRevelation}
+              className="px-10 py-4 rounded-lg font-mono text-xs sm:text-sm font-bold tracking-widest uppercase bg-gradient-to-r from-brass via-brass-light to-brass text-charcoal-900 hover:brightness-110 shadow-brass transition-all inline-flex items-center space-x-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
+            >
+              <Award className="w-5 h-5 text-charcoal-900" />
+              <span>UNSEAL FINAL CURATORIAL REVELATION</span>
+            </motion.button>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: shouldReduceMotion ? 0.01 : 0.5 }}
+              className="p-8 sm:p-12 rounded-xl bg-gradient-to-b from-investigation-forest to-investigation-base border-2 border-brass text-center shadow-spotlight max-w-3xl mx-auto space-y-6"
+            >
+              <div className="w-16 h-16 rounded-full border border-brass bg-investigation-surface mx-auto flex items-center justify-center p-3 shadow-brass">
+                <Sparkles className="w-8 h-8 text-brass" />
               </div>
-              <h2 className="text-xl sm:text-3xl font-serif font-black text-parchment">
-                The Triple Synthesis of Case No. 012
-              </h2>
-            </div>
-            <div className="px-4 py-2 rounded bg-investigation-forest border border-brass/30 text-xs font-mono text-brass-light flex items-center space-x-2 shrink-0">
-              <CheckCircle2 className="w-4 h-4 text-brass" />
-              <span>FORENSIC CONFIRMATION: 100%</span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs leading-relaxed font-sans text-investigation-text/90">
-            <div className="space-y-2 p-5 rounded-lg bg-investigation-card/80 border border-investigation-border">
-              <div className="text-xs font-mono font-bold text-brass uppercase">1. THE OBSERVATION</div>
-              <p>
-                In 1978, the maritime tower stood watch over the unmapped coastal coordinates. 
-                Its lens was calibrated not to record passing storms, but to commemorate the advent of an extraordinary light.
+              <div className="text-xs font-mono text-brass uppercase tracking-widest">
+                OPERATION: FIND HER // THE PRIVATE DEDICATION
+              </div>
+
+              <h3 className="text-2xl sm:text-4xl font-serif font-black text-parchment leading-snug">
+                To An Extraordinary Individual
+              </h3>
+
+              <p className="font-serif italic text-base sm:text-lg text-brass-light/95 leading-relaxed max-w-2xl mx-auto">
+                "You have searched the archives, examined the polaroids, interviewed the suspects, and followed every clue. 
+                Every classified dispatch, every silly witness testimony, and every memory in this collection was assembled to celebrate you."
               </p>
-            </div>
 
-            <div className="space-y-2 p-5 rounded-lg bg-investigation-card/80 border border-investigation-border">
-              <div className="text-xs font-mono font-bold text-brass uppercase">2. THE TESTAMENT</div>
-              <p>
-                In 1988, the dispatch folio was sealed in copper-rich iron gall ink. 
-                Its ciphered passages documented the wisdom, milestones, and enduring legacy of a beloved soul.
-              </p>
-            </div>
+              <div className="p-4 rounded-lg bg-investigation-surface/80 border border-investigation-border text-xs font-mono text-investigation-muted max-w-xl mx-auto">
+                <span>INVESTIGATION CONCLUSION: SUBJECT IS IRREPLACEABLE. HAVE THE HAPPIEST BIRTHDAY.</span>
+              </div>
 
-            <div className="space-y-2 p-5 rounded-lg bg-investigation-card/80 border border-investigation-border">
-              <div className="text-xs font-mono font-bold text-brass uppercase">3. THE TIMEPIECE</div>
-              <p>
-                The astrolithic dial ticks without friction, locking the three concentric rings onto this exact milestone era. 
-                All evidence converges into one single, private celebration.
-              </p>
-            </div>
-          </div>
+              <div className="pt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-mono">
+                <Link
+                  to="/archive"
+                  onClick={() => soundFx.playKeypress()}
+                  className="px-5 py-2.5 rounded bg-investigation-surface border border-investigation-border hover:border-brass text-investigation-text transition-colors"
+                >
+                  RETURN TO BOARD
+                </Link>
 
-          {/* Final Narrative Revelation Unseal CTA */}
-          <div className="pt-6 border-t border-investigation-border text-center">
-            {!isRevelationUnsealed ? (
-              <motion.button
-                whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
-                whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
-                onClick={handleUnsealRevelation}
-                className="px-10 py-4 rounded-lg font-mono text-xs sm:text-sm font-bold tracking-widest uppercase bg-gradient-to-r from-brass via-brass-light to-brass text-charcoal-900 hover:brightness-110 shadow-brass transition-all inline-flex items-center space-x-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
-              >
-                <Award className="w-5 h-5 text-charcoal-900" />
-                <span>UNSEAL FINAL CURATORIAL REVELATION</span>
-              </motion.button>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: shouldReduceMotion ? 0.01 : 0.6 }}
-                className="p-8 sm:p-12 rounded-xl bg-gradient-to-b from-investigation-forest to-investigation-base border-2 border-brass text-center shadow-spotlight max-w-3xl mx-auto space-y-6"
-              >
-                <div className="w-16 h-16 rounded-full border border-brass bg-investigation-surface mx-auto flex items-center justify-center p-3 shadow-brass">
-                  <Sparkles className="w-8 h-8 text-brass" />
-                </div>
+                <Link
+                  to="/scrapbook"
+                  onClick={() => soundFx.playKeypress()}
+                  className="px-5 py-2.5 rounded bg-investigation-surface border border-investigation-border hover:border-brass text-investigation-text transition-colors"
+                >
+                  VIEW SCRAPBOOK
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </section>
 
-                <div className="text-xs font-mono text-brass uppercase tracking-widest">
-                  CASE NO. 012 // THE PRIVATE DEDICATION
-                </div>
-
-                <h3 className="text-2xl sm:text-4xl font-serif font-black text-parchment leading-snug">
-                  To An Extraordinary Individual
-                </h3>
-
-                <p className="font-serif italic text-base sm:text-lg text-brass-light/95 leading-relaxed max-w-2xl mx-auto">
-                  "You have searched the archives, examined the artefacts, and pieced together the chronology. 
-                  Every classified ledger, every astronomical coordinate, and every weathered folio in this collection was assembled to celebrate you."
-                </p>
-
-                <div className="p-4 rounded-lg bg-investigation-surface/80 border border-investigation-border text-xs font-mono text-investigation-muted max-w-xl mx-auto">
-                  <span>CURATORIAL VERDICT: INVESTIGATION COMPLETED WITH HONORS.</span>
-                </div>
-
-                <div className="pt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-mono">
-                  <Link
-                    to="/timeline"
-                    onClick={() => soundFx.playKeypress()}
-                    className="px-5 py-2.5 rounded bg-investigation-surface border border-investigation-border hover:border-brass text-investigation-text transition-colors"
-                  >
-                    REVISIT TIMELINE
-                  </Link>
-
-                  <Link
-                    to="/archive"
-                    onClick={() => soundFx.playKeypress()}
-                    className="px-5 py-2.5 rounded bg-investigation-surface border border-investigation-border hover:border-brass text-investigation-text transition-colors"
-                  >
-                    REVISIT EVIDENCE ARCHIVE
-                  </Link>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </div>
       </main>
 
       <Footer />
@@ -681,18 +674,16 @@ export const MasterGallery: React.FC = () => {
                   type="button"
                   onClick={handleCloseOpticalZoom}
                   aria-label="Close optical zoom dialog"
-                  className="px-3 py-1.5 rounded bg-investigation-surface border border-investigation-border hover:border-brass text-investigation-muted hover:text-parchment font-mono text-xs flex items-center space-x-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
+                  className="p-1 rounded text-investigation-muted hover:text-parchment hover:bg-investigation-surface transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
                 >
-                  <X className="w-4 h-4" />
-                  <span>CLOSE [ESC]</span>
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Modal Body: Image Inspection & Metadata */}
-              <div className="p-6 overflow-y-auto space-y-6 flex-1">
-                {/* High Resolution Image Viewport */}
-                <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] bg-black rounded-lg border border-investigation-border overflow-hidden flex items-center justify-center shadow-inner">
-                  <picture className="w-full h-full">
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto space-y-6">
+                <div className="relative max-h-[50vh] flex items-center justify-center bg-black/60 rounded-lg overflow-hidden border border-investigation-border p-2">
+                  <picture className="max-h-[46vh] max-w-full">
                     {activeZoomItem.webpUrl && <source srcSet={activeZoomItem.webpUrl} type="image/webp" />}
                     <img
                       src={activeZoomItem.imageUrl}
@@ -700,13 +691,8 @@ export const MasterGallery: React.FC = () => {
                       className="w-full h-full object-contain"
                     />
                   </picture>
-                  {/* Subtle reticle watermark */}
-                  <div className="absolute inset-0 pointer-events-none border border-brass/20 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full border border-brass/30 opacity-40" />
-                  </div>
                 </div>
 
-                {/* Details & Caption */}
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-serif font-bold text-xl text-parchment">
@@ -722,34 +708,6 @@ export const MasterGallery: React.FC = () => {
                   <p id="optical-zoom-desc" className="font-sans text-xs sm:text-sm text-investigation-text leading-relaxed">
                     {activeZoomItem.caption}
                   </p>
-
-                  {(activeZoomItem.material || activeZoomItem.dimensions) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-investigation-border/60 text-xs">
-                      {activeZoomItem.material && (
-                        <div className="p-3 rounded bg-investigation-card border border-investigation-border">
-                          <span className="text-brass text-[10px] uppercase block mb-1">MATERIAL SPECIFICATION:</span>
-                          <span className="text-investigation-muted">{activeZoomItem.material}</span>
-                        </div>
-                      )}
-                      {activeZoomItem.dimensions && (
-                        <div className="p-3 rounded bg-investigation-card border border-investigation-border">
-                          <span className="text-brass text-[10px] uppercase block mb-1">DIMENSIONS / SCALE:</span>
-                          <span className="text-investigation-muted">{activeZoomItem.dimensions}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {activeZoomItem.forensicNotes && activeZoomItem.forensicNotes.length > 0 && (
-                    <div className="pt-2">
-                      <span className="text-brass text-[10px] uppercase tracking-wider block mb-2">CURATORIAL LEDGER OBSERVATIONS:</span>
-                      <ul className="space-y-1 list-disc list-inside font-sans text-xs text-investigation-muted">
-                        {activeZoomItem.forensicNotes.map((note, idx) => (
-                          <li key={idx}>{note}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -807,7 +765,7 @@ export const MasterGallery: React.FC = () => {
               </div>
 
               <p id="reset-modal-desc" className="font-sans text-xs text-investigation-text leading-relaxed">
-                Resetting your investigation progression will clear your inspected exhibit records from local storage and return the Master Gallery to its sealed state. You can inspect the exhibits again at any time.
+                Resetting your investigation progression will clear your examined clues from local storage and return the Subject Found scene to its sealed state. You can inspect the clues again at any time.
               </p>
 
               <div className="flex items-center justify-end space-x-3 pt-2">
@@ -830,6 +788,7 @@ export const MasterGallery: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
     </motion.div>
   );
 };

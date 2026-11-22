@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Volume2, VolumeX, Shield, Lock, Unlock, Sparkles } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Volume2, VolumeX, Shield, Lock, Unlock, Sparkles, FolderSearch, BookOpen, Users, Compass, Heart } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { useProgression } from '../utils/progression';
 
 interface HeaderProps {
-  currentScreen?: 'terminal' | 'briefing' | 'archive' | 'timeline' | 'gallery';
+  currentScreen?: 'terminal' | 'briefing' | 'archive' | 'timeline' | 'gallery' | 'scrapbook' | 'witnesses' | 'found';
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentScreen = 'archive' }) => {
+export const Header: React.FC<HeaderProps> = ({ currentScreen: _currentScreen }) => {
+  const location = useLocation();
   const [muted, setMuted] = useState(soundFx.getMuted());
   const { inspectedIds, isUnlocked } = useProgression();
 
@@ -20,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen = 'archive' }) => 
     }
   };
 
-  const isNavigable = currentScreen !== 'terminal' && currentScreen !== 'briefing';
+  const pathname = location.pathname;
 
   return (
     <>
@@ -32,88 +33,117 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen = 'archive' }) => 
         Skip to main content
       </a>
 
-      <header className="sticky top-0 z-40 w-full border-b border-investigation-border/60 bg-investigation-base/90 backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full border-b border-investigation-border/60 bg-investigation-base/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
-          {/* Left: Department Identity */}
+          {/* Left: Operation Find Her Identity */}
           <Link
-            to={isNavigable ? '/archive' : '/'}
+            to="/archive"
             className="flex items-center space-x-3 group focus:outline-none focus-visible:ring-1 focus-visible:ring-brass rounded p-1"
           >
-            <div className="w-8 h-8 rounded-full border border-brass/40 flex items-center justify-center bg-investigation-surface/80 p-1 group-hover:border-brass transition-colors">
-              <img src="/seal.svg" alt="Department Seal" className="w-full h-full object-contain" />
+            <div className="w-9 h-9 rounded-full border border-brass/50 flex items-center justify-center bg-investigation-surface/90 p-1 group-hover:border-brass transition-colors shadow-brass-sm">
+              <img src="/seal.svg" alt="Investigation Seal" className="w-full h-full object-contain" />
             </div>
             <div>
-              <div className="text-xs font-serif tracking-widest text-brass-light font-bold group-hover:text-brass transition-colors">
-                THE DEPARTMENT OF EXTRAORDINARY THINGS
+              <div className="text-xs sm:text-sm font-serif tracking-widest text-brass-light font-bold group-hover:text-brass transition-colors flex items-center space-x-1.5">
+                <span>OPERATION: FIND HER</span>
+                <Heart className="w-3 h-3 text-red-500 fill-red-500 animate-pulse" />
               </div>
               <div className="text-[10px] font-mono tracking-wider text-investigation-muted flex items-center space-x-2">
                 <span>CASE NO. 012</span>
                 <span>•</span>
-                <span className="text-brass/80">CONFIDENTIAL COLLECTION</span>
+                <span className="text-brass/80">CONFIDENTIAL DOSSIER</span>
               </div>
             </div>
           </Link>
 
-          {/* Center Navigation for investigation routes */}
-          {isNavigable && (
-            <nav
-              aria-label="Investigation environments"
-              className="hidden md:flex items-center space-x-1 p-1 rounded-lg bg-investigation-surface/80 border border-investigation-border/60 text-xs font-mono"
+          {/* Center Navigation: Responsive Tabs for Investigation Hubs */}
+          <nav
+            aria-label="Investigation Navigation"
+            className="hidden lg:flex items-center space-x-1 p-1 rounded-lg bg-investigation-surface/80 border border-investigation-border/60 text-xs font-mono"
+          >
+            <Link
+              to="/archive"
+              onClick={() => soundFx.playKeypress()}
+              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
+                pathname === '/archive' || pathname === '/board'
+                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
+                  : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
+              }`}
             >
-              <Link
-                to="/archive"
-                onClick={() => soundFx.playKeypress()}
-                className={`px-3 py-1.5 rounded transition-all ${
-                  currentScreen === 'archive'
-                    ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
-                    : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
-                }`}
-              >
-                ARCHIVE
-              </Link>
+              <FolderSearch className="w-3.5 h-3.5" />
+              <span>BOARD</span>
+            </Link>
 
-              <Link
-                to="/timeline"
-                onClick={() => soundFx.playKeypress()}
-                className={`px-3 py-1.5 rounded transition-all ${
-                  currentScreen === 'timeline'
-                    ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
-                    : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
-                }`}
-              >
-                TIMELINE
-              </Link>
+            <Link
+              to="/scrapbook"
+              onClick={() => soundFx.playKeypress()}
+              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
+                pathname === '/scrapbook'
+                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
+                  : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>SCRAPBOOK</span>
+            </Link>
 
-              <Link
-                to="/gallery"
-                onClick={() => soundFx.playKeypress()}
-                className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
-                  currentScreen === 'gallery'
-                    ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
-                    : isUnlocked
-                    ? 'text-brass-light hover:text-brass hover:bg-investigation-card'
-                    : 'text-investigation-muted/70 hover:text-investigation-muted hover:bg-investigation-card'
-                }`}
-              >
-                {isUnlocked ? (
-                  <Sparkles className="w-3.5 h-3.5 text-brass" />
-                ) : (
-                  <Lock className="w-3 h-3 text-investigation-muted" />
-                )}
-                <span>MASTER GALLERY</span>
-              </Link>
-            </nav>
-          )}
+            <Link
+              to="/witnesses"
+              onClick={() => soundFx.playKeypress()}
+              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
+                pathname === '/witnesses'
+                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
+                  : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>WITNESSES & SUSPECTS</span>
+            </Link>
 
-          {/* Right: Security Badge, Progress & Audio Controls */}
-          <div className="flex items-center space-x-3">
-            {isNavigable && (
-              <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded bg-investigation-surface border border-investigation-border text-[11px] font-mono text-investigation-muted">
-                <span className="text-brass font-bold">{inspectedIds.length}/3</span>
-                <span>EXHIBITS</span>
-              </div>
-            )}
+            <Link
+              to="/timeline"
+              onClick={() => soundFx.playKeypress()}
+              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
+                pathname === '/timeline'
+                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
+                  : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>TIMELINE</span>
+            </Link>
+
+            <Link
+              to="/gallery"
+              onClick={() => soundFx.playKeypress()}
+              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
+                pathname === '/gallery' || pathname === '/found'
+                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
+                  : isUnlocked
+                  ? 'text-brass-light hover:text-brass hover:bg-investigation-card'
+                  : 'text-investigation-muted/70 hover:text-investigation-muted hover:bg-investigation-card'
+              }`}
+            >
+              {isUnlocked ? (
+                <Sparkles className="w-3.5 h-3.5 text-brass animate-spin-slow" />
+              ) : (
+                <Lock className="w-3 h-3 text-investigation-muted" />
+              )}
+              <span>SUBJECT FOUND (MASTER GALLERY)</span>
+            </Link>
+          </nav>
+
+          {/* Right: Security Badge, Clue Count & Audio Controls */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <Link
+              to="/archive"
+              className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-investigation-surface border border-brass/40 text-[11px] font-mono text-brass-light hover:border-brass transition-colors"
+              title="Clues inspected across investigation"
+            >
+              <span className="font-bold">{inspectedIds.length}/3</span>
+              <span className="hidden sm:inline">CLUES</span>
+            </Link>
 
             <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-investigation-surface border border-investigation-border text-[11px] font-mono text-investigation-muted">
               <Shield className="w-3.5 h-3.5 text-brass" />
@@ -139,6 +169,63 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen = 'archive' }) => 
             </button>
           </div>
 
+        </div>
+
+        {/* Mobile Sub-Navigation Bar */}
+        <div className="lg:hidden flex items-center justify-around px-2 py-2 border-t border-investigation-border/40 bg-investigation-forest/90 overflow-x-auto text-[11px] font-mono">
+          <Link
+            to="/archive"
+            className={`px-2.5 py-1 rounded whitespace-nowrap ${
+              pathname === '/archive' || pathname === '/board'
+                ? 'bg-brass text-charcoal-900 font-bold'
+                : 'text-investigation-muted'
+            }`}
+          >
+            BOARD
+          </Link>
+          <Link
+            to="/scrapbook"
+            className={`px-2.5 py-1 rounded whitespace-nowrap ${
+              pathname === '/scrapbook'
+                ? 'bg-brass text-charcoal-900 font-bold'
+                : 'text-investigation-muted'
+            }`}
+          >
+            SCRAPBOOK
+          </Link>
+          <Link
+            to="/witnesses"
+            className={`px-2.5 py-1 rounded whitespace-nowrap ${
+              pathname === '/witnesses'
+                ? 'bg-brass text-charcoal-900 font-bold'
+                : 'text-investigation-muted'
+            }`}
+          >
+            WITNESSES
+          </Link>
+          <Link
+            to="/timeline"
+            className={`px-2.5 py-1 rounded whitespace-nowrap ${
+              pathname === '/timeline'
+                ? 'bg-brass text-charcoal-900 font-bold'
+                : 'text-investigation-muted'
+            }`}
+          >
+            TIMELINE
+          </Link>
+          <Link
+            to="/gallery"
+            className={`px-2.5 py-1 rounded whitespace-nowrap flex items-center space-x-1 ${
+              pathname === '/gallery' || pathname === '/found'
+                ? 'bg-brass text-charcoal-900 font-bold'
+                : isUnlocked
+                ? 'text-brass-light'
+                : 'text-investigation-muted/70'
+            }`}
+          >
+            {isUnlocked ? <Sparkles className="w-3 h-3 text-brass" /> : <Lock className="w-2.5 h-2.5" />}
+            <span>FOUND</span>
+          </Link>
         </div>
       </header>
     </>

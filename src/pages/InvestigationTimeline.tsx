@@ -37,39 +37,39 @@ interface ChronoNode {
 const CHRONO_NODES: ChronoNode[] = [
   {
     item: EVIDENCE_COLLECTION[0], // ITEM-012-A
-    era: 'CIRCA 1978 — ARCHIVAL EPOCH',
+    era: 'CHRONO CLUE 01: THE SCENIC OVERLOOK SIGHTING',
     order: 1,
     establishedFacts: [
       'Gelatin silver print on double-weight rag paper with custom lens vignetting.',
-      'Reverse bears handwritten inscription: "Where the horizon bends inward."',
-      'Spectral analysis confirms Sector 7 maritime bluff origin.'
+      'Reverse bears handwritten inscription: "Evidence suggests an unusually high concentration of cuteness."',
+      'Confirmed sighting of subject laughing by the scenic maritime bluff.'
     ],
     investigativeHypothesis:
-      'The observatory served as the solitary visual lookout point where the search for an extraordinary life trajectory first took physical form.'
+      'The scenic lookout serves as the primary sighting point where she paused to take in the golden hour and admire the horizon.'
   },
   {
     item: EVIDENCE_COLLECTION[1], // ITEM-012-B
-    era: 'CIRCA 1988 — CORRESPONDENCE RECORD',
+    era: 'CHRONO CLUE 02: THE HANDWRITTEN DISPATCH',
     order: 2,
     establishedFacts: [
-      'Weathered 100% flax rag paper penned in Department iron gall ink.',
+      'Weathered 100% flax rag paper penned with personal messages.',
       'Archival red wax seal containing micro-impression of an astronomical constellation.',
-      'Cipher text references a milestone dedication preserved under Vault Annex 4.'
+      'Cipher text references a milestone dedication and warm messages from friends.'
     ],
     investigativeHypothesis:
-      'The confidential dispatch records the vows and milestones of this extraordinary individual, establishing a paper trail leading directly to the vault.'
+      'The confidential dispatch records the love and milestones of this extraordinary individual, establishing a paper trail leading directly to her celebration.'
   },
   {
     item: EVIDENCE_COLLECTION[2], // ITEM-012-C
-    era: 'PRESENT ERA — CELEBRATORY CONVERGENCE',
+    era: 'CHRONO CLUE 03: THE CELEBRATORY CONVERGENCE',
     order: 3,
     establishedFacts: [
       'Concentric engine-turned copper-zinc brass dial with obsidian viewing optic.',
       'Three nested rings rotate with zero friction and tick at exactly 60 bpm.',
-      'Perimeter inscriptions calibrate to the exact coordinates of a private celebration.'
+      'Perimeter inscriptions calibrate to the exact coordinates of her scenic birthday reunion.'
     ],
     investigativeHypothesis:
-      'The astrolithic dial acts as the mechanical culmination, physically synthesizing the years, coordinates, and memories into an immortal celebration.'
+      'The astrolithic dial acts as the keepsake compass, physically synthesizing the clues, years, and memories into an immortal celebration.'
   }
 ];
 
@@ -107,27 +107,27 @@ export const InvestigationTimeline: React.FC = () => {
               className="hover:text-brass transition-colors flex items-center space-x-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>RETURN TO EVIDENCE ARCHIVE</span>
+              <span>RETURN TO INVESTIGATION BOARD</span>
             </Link>
             <span>/</span>
-            <span className="text-brass-light font-bold">CHRONOLOGICAL SYNTHESIS</span>
+            <span className="text-brass-light font-bold">CHRONOLOGICAL TRAIL</span>
           </div>
 
           <div className="flex items-center space-x-3 text-xs font-mono">
             <div className="px-3 py-1.5 rounded bg-investigation-surface border border-investigation-border text-investigation-text flex items-center space-x-2">
               <Layers className="w-3.5 h-3.5 text-brass" />
-              <span>TIMELINE STATUS: {inspectedIds.length} / 3 NODES AUTHENTICATED ({percentage}%)</span>
+              <span>TIMELINE STATUS: {inspectedIds.length} / 3 CLUES EXAMINED ({percentage}%)</span>
             </div>
 
             {isUnlocked ? (
               <div className="px-3 py-1.5 rounded bg-brass/20 border border-brass/50 text-brass-light font-bold flex items-center space-x-1.5">
                 <Unlock className="w-3.5 h-3.5 text-brass" />
-                <span>GALLERY UNLOCKED</span>
+                <span>SUBJECT FOUND UNLOCKED</span>
               </div>
             ) : (
               <div className="px-3 py-1.5 rounded bg-investigation-forest border border-investigation-border text-investigation-muted flex items-center space-x-1.5">
                 <Lock className="w-3.5 h-3.5 text-investigation-muted" />
-                <span>GALLERY LOCKED</span>
+                <span>SUBJECT FOUND LOCKED</span>
               </div>
             )}
           </div>
@@ -136,13 +136,13 @@ export const InvestigationTimeline: React.FC = () => {
         {/* Header Title Section */}
         <div className="my-8 text-center sm:text-left">
           <div className="text-xs font-mono text-brass tracking-widest uppercase mb-2">
-            FORENSIC TEMPORAL MAPPING // CASE 012
+            OPERATION: FIND HER // CASE NO. 012
           </div>
           <h1 className="text-2xl sm:text-4xl font-serif font-black text-parchment tracking-wide">
             THE CONNECTED INVESTIGATION TIMELINE
           </h1>
           <p className="text-sm font-sans text-investigation-muted max-w-3xl mt-2 leading-relaxed">
-            Every recovered artifact occupies a precise moment along a single coherent trajectory. 
+            Trace the trail of memories, handwritten dispatches, and compass readings that lead directly to the scenic birthday reunion. 
             Examine the chronological milestones below to discern how an observatory in 1978 and a sealed dispatch in 1988 
             converge with the astrolithic dial to commemorate an extraordinary life.
           </p>

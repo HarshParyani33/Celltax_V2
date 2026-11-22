@@ -14,6 +14,11 @@ export const ACCEPTED_CLEARANCE_CODES = [
   "INVESTIGATOR",
   "OPEN",
   "START",
+  "FINDHER",
+  "FIND HER",
+  "HER",
+  "BIRTHDAY",
+  "OPERATION",
 ] as const;
 
 export type ClearanceCode = typeof ACCEPTED_CLEARANCE_CODES[number];
