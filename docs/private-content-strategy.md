@@ -31,10 +31,10 @@ When real photographs, milestones, and personal letters are ready to be integrat
    - **Iteration Count:** Calibrated to **600,000 iterations** (conforming to current OWASP Password Storage guidelines for PBKDF2-HMAC-SHA-256).
    - **Salt:** Exactly 16 bytes (128 bits) of cryptographically secure pseudo-random data generated per encryption operation via `window.crypto.getRandomValues(new Uint8Array(16))`. The salt must **never be static or hardcoded**.
    - *Note on Alternative KDFs:* Where WebAssembly is permitted, memory-hard Argon2id (`m=64 MiB`, `t=3`, `p=4`) provides even stronger ASIC/GPU resistance than PBKDF2. For native, dependency-free Web Crypto API (`window.crypto.subtle`), PBKDF2-HMAC-SHA-256 at 600,000 iterations is the standardized choice.
-2. **Authenticated Symmetric Cipher:**
+2. **Authenticated Symmetric Cipher & Web Crypto Tag Consistency:**
    - **Algorithm:** AES-GCM (Galois/Counter Mode) with 256-bit derived key.
    - **Initialization Vector (Nonce / IV):** Exactly 12 bytes (96 bits) generated per encryption operation via `window.crypto.getRandomValues(new Uint8Array(12))`. **A nonce must NEVER be reused with the same key under any circumstances**, as nonce reuse under AES-GCM destroys ciphertext authenticity and can reveal plaintext xor relationships.
-   - **Authentication Tag:** 128-bit integrity tag appended to or encapsulated with the ciphertext.
+   - **Authentication Tag & Internal Representation:** 128-bit integrity tag. Under the standardized Web Crypto API (`window.crypto.subtle`), `encrypt()` outputs an `ArrayBuffer` containing the raw ciphertext with the 128-bit authentication tag automatically appended to the end. The versioned envelope stores this composite buffer directly as a single base64 string in `ciphertext`. When decrypting, `decrypt()` expects this exact composite buffer directly. **Do not manually extract, re-append, or duplicate the authentication tag.**
 3. **Versioned Authenticated Envelope Schema:**
    The encrypted archive is serialized as a versioned JSON metadata envelope (`dossier.enc.json`):
    ```json
@@ -57,6 +57,71 @@ When real photographs, milestones, and personal letters are ready to be integrat
    }
    ```
    *Versioning benefit:* The `schemaVersion` header ensures future migrations (e.g. upgrading KDF parameters or switching to post-quantum algorithms) can be safely identified and parsed without breaking historical archives.
+4. **Additional Authenticated Data (AAD) Specification:**
+   - **Integrity Requirement for Decryption Metadata:** Metadata affecting key derivation and decryption interpretation must be authenticated using AES-GCM Additional Authenticated Data (`additionalData`). Without authentication, cleartext envelope metadata can be tampered with in transit or on public storage (for instance, an attacker could maliciously lower `iterations` to degrade KDF work factor, alter algorithm identifiers, or swap IVs/salts to induce cryptographic downgrade or parameter confusion attacks).
+   - **Authentication vs. Encryption:** **AAD authenticates metadata but does NOT encrypt or hide it.** The metadata fields remain openly readable in plaintext in the JSON envelope so that the client runtime can read parameters required to initialize the KDF and cipher. Passing these metadata bytes as AAD cryptographically binds them into the Galois MAC tag calculation during encryption.
+   - **Deterministic Canonical Serialization:** Both the encryption tool and client-side decryption implementation must construct **byte-for-byte identical AAD byte sequences**. Because standard JSON serialization can vary across runtimes due to arbitrary property ordering, optional whitespace, or number representations, the AAD payload must be constructed using a strict, deterministic canonical serialization before passing to Web Crypto.
+
+     *Canonical Delimited String Representation (Recommended):*
+     ```
+     celltax-aad:v1|schemaVersion=1|format=celltax-curatorial-envelope|kdfAlgorithm=PBKDF2|kdfHash=SHA-256|kdfIterations=600000|salt=<salt-base64>|cipherAlgorithm=AES-GCM|keyLengthBits=256|iv=<iv-base64>|tagLengthBits=128
+     ```
+     *Or Canonical Key-Sorted JSON (Strictly without whitespace, keys sorted lexicographically by ASCII codepoint):*
+     ```json
+     {"cipherAlgorithm":"AES-GCM","format":"celltax-curatorial-envelope","iv":"<iv-base64>","kdfAlgorithm":"PBKDF2","kdfHash":"SHA-256","kdfIterations":600000,"keyLengthBits":256,"salt":"<salt-base64>","schemaVersion":1,"tagLengthBits":128}
+     ```
+     *Mandatory Fields in the Canonical AAD Payload (at minimum):*
+     - `schemaVersion` (integer): Envelope schema version (`1`)
+     - `format` (string): Envelope format identifier (`"celltax-curatorial-envelope"`)
+     - `kdfAlgorithm` (string): KDF algorithm (`"PBKDF2"`)
+     - `kdfHash` (string): KDF digest hash (`"SHA-256"`)
+     - `kdfIterations` (integer): Calibrated iteration count (`600000`)
+     - `salt` (string): Base64-encoded 16-byte random salt
+     - `cipherAlgorithm` (string): Symmetric cipher algorithm (`"AES-GCM"`)
+     - `keyLengthBits` (integer): Derived key length in bits (`256`)
+     - `iv` (string): Base64-encoded 12-byte initialization vector
+     - `tagLengthBits` (integer): Authentication tag length in bits (`128`)
+
+     The canonical string is converted to binary using UTF-8:
+     ```ts
+     const aadBytes = new TextEncoder().encode(canonicalAadString);
+     ```
+
+   - **Web Crypto Parameter Passing (`additionalData`):**
+     During **encryption**, pass `aadBytes` into `additionalData`:
+     ```ts
+     const ciphertextWithTagBuffer = await window.crypto.subtle.encrypt(
+       {
+         name: 'AES-GCM',
+         iv: ivBytes,             // 12-byte Uint8Array
+         additionalData: aadBytes,// Exactly constructed canonical AAD bytes
+         tagLength: 128           // Tag length in bits
+       },
+       derivedKey,
+       plaintextBytes
+     );
+     // Web Crypto automatically appends the 128-bit authentication tag to the ciphertext buffer.
+     // Store directly as base64 in envelope.ciphertext.
+     ```
+     During **decryption**, reconstruct the exact same canonical `aadBytes` from the envelope metadata and pass them to `decrypt()`:
+     ```ts
+     const decryptedBuffer = await window.crypto.subtle.decrypt(
+       {
+         name: 'AES-GCM',
+         iv: ivBytes,             // 12-byte Uint8Array decoded from envelope.cipher.iv
+         additionalData: aadBytes,// Exactly identical canonical AAD bytes reconstructed from envelope
+         tagLength: 128
+       },
+       derivedKey,
+       ciphertextWithTagBuffer  // ArrayBuffer from base64 envelope.ciphertext (contains appended tag)
+     );
+     ```
+
+   - **Authentication Failure Guarantee:** If any authenticated metadata value (e.g. `schemaVersion`, `format`, `kdfIterations`, `salt`, or `iv`) is modified or corrupted by even a single bit, the GMAC authentication check in `window.crypto.subtle.decrypt()` will fail, causing the promise to immediately reject with an `OperationError`. Decryption will abort, and no plaintext will be released.
+
+> [!NOTE]
+> **Specification vs. Implementation Notice**:
+> This section is an architectural and cryptographic specification for future private deployments when real personal memories are introduced. There is no active client-side encryption implementation in the current public repository.
 
 #### Offline Password-Guessing Risks:
 > [!WARNING]
@@ -69,9 +134,10 @@ When real photographs, milestones, and personal letters are ready to be integrat
 #### Runtime Decryption Flow:
 1. The recipient enters the high-entropy passphrase into the Access Terminal.
 2. The browser invokes `window.crypto.subtle.deriveKey()` using PBKDF2-HMAC-SHA-256 with 600,000 iterations and the unique envelope salt.
-3. The browser attempts `window.crypto.subtle.decrypt()` with AES-GCM and the 12-byte IV.
-4. If authentication fails, Web Crypto API rejects the operation with an `OperationError` (indicating invalid key or corrupted payload).
-5. Upon successful verification, decrypted memory objects and images exist **only in ephemeral JavaScript memory** (Blob / Object URLs) and are automatically destroyed upon tab dismissal.
+3. The browser reconstructs the canonical AAD bytes from the envelope metadata (`schemaVersion`, `format`, KDF parameters, cipher parameters, salt, IV, tag length).
+4. The browser invokes `window.crypto.subtle.decrypt()` passing `iv`, `additionalData: aadBytes`, `tagLength: 128`, and the base64-decoded `ciphertext` (which includes the appended 128-bit authentication tag).
+5. If the passphrase is incorrect OR if any authenticated metadata or ciphertext was tampered with, Web Crypto API rejects with an `OperationError` (aborting decryption).
+6. Upon successful verification, decrypted memory objects and images exist **only in ephemeral JavaScript memory** (Blob / Object URLs) and are automatically destroyed upon tab dismissal.
 
 ---
 

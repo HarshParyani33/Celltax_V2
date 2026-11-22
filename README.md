@@ -211,7 +211,7 @@ Visit `http://localhost:5173` in your browser.
 All verifications are executed automatically:
 1. **TypeScript Typecheck:** `npm run typecheck` passes with zero errors under strict mode.
 2. **Production Build:** `npm run build` compiles clean bundles with full route code splitting and asset hashing.
-3. **Behavioral Suite (34 Unit Tests across 10 Suites):** `npm test` runs Node test runner against actual module exports:
+3. **Behavioral Suite (35 Unit Tests across 10 Suites):** `npm test` runs Node test runner against actual module exports:
    - `src/utils/credentials.ts`: Case-insensitive whitespace-tolerant clearance validation.
    - `src/utils/timers.ts`: Active interval and timeout lifecycle tracking and teardown.
    - `src/utils/focus.ts`: Hidden-ancestor DOM filtering, boundary Tab wrapping, and safe focus restoration.
