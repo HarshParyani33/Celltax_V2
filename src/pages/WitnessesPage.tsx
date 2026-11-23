@@ -55,10 +55,12 @@ export const WitnessesPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => { soundFx.playKeypress(); setActiveTab('witnesses'); }}
-                                  ? 'bg-gradient-to-r from-[#d99b9b] to-[#9c5460] text-white shadow-sm'
-                                  : 'text-[#7a685c] hover:text-[#38261e]'
-                              }`}
-            >
+                          className={`px-5 py-2 rounded-full font-serif font-bold text-xs uppercase tracking-wider transition-all ${
+                            activeTab === 'witnesses'
+                              ? 'bg-gradient-to-r from-[#d99b9b] to-[#9c5460] text-white shadow-sm'
+                              : 'text-[#7a685c] hover:text-[#38261e]'
+                          }`}
+                        >
               WITNESS STATEMENTS (FRIENDS)
             </button>
             <button

@@ -518,10 +518,12 @@ export const MasterGallery: React.FC = () => {
                                                                                               soundFx.playKeypress();
                                                                                               setActiveCollectionTab(col.id);
                                                                                             }}
-                                                                                                    ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold shadow-xs'
-                                                                                                    : 'bg-[#f5ede2] border border-[#d8c8b4] text-[#6d5b52] hover:text-[#38261e]'
-                                                                                                }`}
-                >
+                                                                                            className={`px-3.5 py-1.5 rounded-full text-xs font-mono whitespace-nowrap transition-all ${
+                                                                                              activeCollectionTab === col.id
+                                                                                                ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold shadow-xs'
+                                                                                                : 'bg-[#f5ede2] border border-[#d8c8b4] text-[#6d5b52] hover:text-[#38261e]'
+                                                                                            }`}
+                                                                                          >
                   {col.title.split(':')[0]}
                 </button>
               ))}

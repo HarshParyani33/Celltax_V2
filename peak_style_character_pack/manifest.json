@@ -1,0 +1,96 @@
+{
+  "pack_name": "Stylized Adventure Character Pack",
+  "note": "Original procedural low-poly characters. Inspired by the broad playful adventure-game aesthetic; not PEAK or Roblox game assets.",
+  "characters": [
+    {
+      "file": "models/player_investigator.glb",
+      "name": "Player Investigator",
+      "role": "Playable detective; warm orange jacket, teal trousers, mustard scarf.",
+      "format": "glTF Binary (.glb)",
+      "height_units": 2.15,
+      "forward_axis": "+Z",
+      "up_axis": "+Y",
+      "rigged": false
+    },
+    {
+      "file": "models/witness_01.glb",
+      "name": "Witness 01 - The Dramatic One",
+      "role": "Expressive, dramatic friend.",
+      "format": "glTF Binary (.glb)",
+      "height_units": 2.15,
+      "forward_axis": "+Z",
+      "up_axis": "+Y",
+      "rigged": false
+    },
+    {
+      "file": "models/witness_02.glb",
+      "name": "Witness 02 - The Softie",
+      "role": "Gentle, sentimental friend.",
+      "format": "glTF Binary (.glb)",
+      "height_units": 2.15,
+      "forward_axis": "+Z",
+      "up_axis": "+Y",
+      "rigged": false
+    },
+    {
+      "file": "models/witness_03.glb",
+      "name": "Witness 03 - The Chaos One",
+      "role": "Chaotic, funny friend.",
+      "format": "glTF Binary (.glb)",
+      "height_units": 2.15,
+      "forward_axis": "+Z",
+      "up_axis": "+Y",
+      "rigged": false
+    },
+    {
+      "file": "models/witness_04.glb",
+      "name": "Witness 04 - The Old Friend",
+      "role": "Calm childhood friend.",
+      "format": "glTF Binary (.glb)",
+      "height_units": 2.15,
+      "forward_axis": "+Z",
+      "up_axis": "+Y",
+      "rigged": false
+    },
+    {
+      "file": "models/witness_05.glb",
+      "name": "Witness 05 - The Secret Keeper",
+      "role": "Mysterious but kind friend.",
+      "format": "glTF Binary (.glb)",
+      "height_units": 2.15,
+      "forward_axis": "+Z",
+      "up_axis": "+Y",
+      "rigged": false
+    },
+    {
+      "file": "models/witness_06.glb",
+      "name": "Witness 06 - The Sarcastic One",
+      "role": "Sarcastic friend.",
+      "format": "glTF Binary (.glb)",
+      "height_units": 2.15,
+      "forward_axis": "+Z",
+      "up_axis": "+Y",
+      "rigged": false
+    },
+    {
+      "file": "models/witness_07.glb",
+      "name": "Witness 07 - The Observer",
+      "role": "Quiet, observant friend.",
+      "format": "glTF Binary (.glb)",
+      "height_units": 2.15,
+      "forward_axis": "+Z",
+      "up_axis": "+Y",
+      "rigged": false
+    },
+    {
+      "file": "models/witness_08.glb",
+      "name": "Witness 08 - The Final Witness",
+      "role": "The friend with the final clue.",
+      "format": "glTF Binary (.glb)",
+      "height_units": 2.15,
+      "forward_axis": "+Z",
+      "up_axis": "+Y",
+      "rigged": false
+    }
+  ]
+}

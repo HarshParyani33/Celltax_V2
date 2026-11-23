@@ -13,6 +13,7 @@ import {
   Pin,
   Lock,
   ArrowRight,
+  Gamepad2,
   Gift,
   Smile,
   Bookmark
@@ -240,6 +241,26 @@ export const EvidenceArchive: React.FC = () => {
                                                 </div>
                                                 <p className="text-xs text-[#7a685c] leading-relaxed">
                                                   The grand scenic reveal at golden hour, photo series, and heartfelt birthday message.
+                                                </p>
+                                              </div>
+                                            </Link>
+
+                                            <Link
+                                              to="/game"
+                                              onClick={() => soundFx.playKeypress()}
+                                              className="group p-5 rounded-2xl bg-gradient-to-br from-[#f5ede2] via-[#ffffff] to-[#fbf8f4] border-2 border-[#c5a059] hover:border-[#8b3a2b] transition-all duration-300 shadow-gift hover:shadow-xl flex items-start space-x-4 col-span-1 md:col-span-2 lg:col-span-3"
+                                            >
+                                              <div className="w-12 h-12 rounded-xl bg-[#8b3a2b] text-[#faf6f0] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                                                <Gamepad2 className="w-6 h-6 text-[#d4af37]" />
+                                              </div>
+                                              <div className="space-y-1 flex-1">
+                                                <div className="font-serif font-bold text-[#38261e] text-base group-hover:text-[#8b3a2b] transition-colors flex flex-wrap items-center gap-2">
+                                                  <span>3D Adventure Prototype (PEAK-Style Characters)</span>
+                                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#d4af37]/20 text-[#8b3a2b] border border-[#d4af37]/50">9 STYLIZED GLB MODELS</span>
+                                                  <ArrowRight className="w-3.5 h-3.5 text-[#8b3a2b] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                                </div>
+                                                <p className="text-xs text-[#7a685c] leading-relaxed">
+                                                  Explore the 3D test room: third-person playable Investigator with WASD movement, sprint, mouse camera orbit, collision sliding, and all 8 witness NPCs with procedural animations.
                                                 </p>
                                               </div>
                                             </Link>

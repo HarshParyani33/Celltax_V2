@@ -67,3 +67,9 @@ This directory contains full-resolution captures of every screen, hub, and inter
 ### 11. Act III: Unsealed Birthday Dedication Revelation
 ![11 Birthday Celebration Revelation](11_birthday_celebration_revelation.png)
 *The final curatorial revelation unsealed: heartfelt birthday dedication, celebrating her as irreplaceable and deeply loved.*
+
+---
+
+### 12. 3D Adventure Prototype — Stylized Character Courtyard (`/game`)
+![12 3D Adventure Prototype](12_3d_adventure_prototype.png)
+*Browser-based 3D adventure prototype inspired by PEAK's visual aesthetic. Features the third-person playable Investigator (`player_investigator.glb`) with WASD movement, sprint, mouse camera orbit, collision sliding, and all eight witness NPCs (`witness_01.glb` through `witness_08.glb`) with procedural breathing, idle, walking, running, interacting, and talking animations.*

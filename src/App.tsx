@@ -8,6 +8,7 @@ import { ScrapbookPage } from './pages/ScrapbookPage';
 import { WitnessesPage } from './pages/WitnessesPage';
 import { InvestigationTimeline } from './pages/InvestigationTimeline';
 import { MasterGallery } from './pages/MasterGallery';
+import { AdventureGamePage } from './pages/AdventureGamePage';
 
 export const App: React.FC = () => {
   const location = useLocation();
@@ -29,6 +30,9 @@ export const App: React.FC = () => {
           <Route path="/gallery" element={<MasterGallery />} />
           <Route path="/found" element={<MasterGallery />} />
           <Route path="/museum" element={<Navigate to="/gallery" replace />} />
+          <Route path="/game" element={<AdventureGamePage />} />
+          <Route path="/adventure" element={<AdventureGamePage />} />
+          <Route path="/test-room" element={<AdventureGamePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
