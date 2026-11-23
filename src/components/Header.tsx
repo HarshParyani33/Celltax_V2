@@ -28,48 +28,46 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen: _currentScreen })
       {/* Skip to Main Content Link for Keyboard Accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 z-50 px-4 py-2 bg-brass text-charcoal-900 font-mono text-xs font-bold rounded shadow-brass focus:outline-none focus-visible:ring-2 focus-visible:ring-brass-light"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 z-50 px-4 py-2 bg-[#8b3a2b] text-[#faf6f0] font-mono text-xs font-bold rounded shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8b3a2b]"
       >
         Skip to main content
       </a>
 
-      <header className="sticky top-0 z-40 w-full border-b border-investigation-border/60 bg-investigation-base/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          
-          {/* Left: Operation Find Her Identity */}
-          <Link
-            to="/archive"
-            className="flex items-center space-x-3 group focus:outline-none focus-visible:ring-1 focus-visible:ring-brass rounded p-1"
-          >
-            <div className="w-9 h-9 rounded-full border border-brass/50 flex items-center justify-center bg-investigation-surface/90 p-1 group-hover:border-brass transition-colors shadow-brass-sm">
-              <img src="/seal.svg" alt="Investigation Seal" className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <div className="text-xs sm:text-sm font-serif tracking-widest text-brass-light font-bold group-hover:text-brass transition-colors flex items-center space-x-1.5">
-                <span>OPERATION: FIND HER</span>
-                <Heart className="w-3 h-3 text-red-500 fill-red-500 animate-pulse" />
-              </div>
-              <div className="text-[10px] font-mono tracking-wider text-investigation-muted flex items-center space-x-2">
-                <span>CASE NO. 012</span>
-                <span>•</span>
-                <span className="text-brass/80">CONFIDENTIAL DOSSIER</span>
-              </div>
-            </div>
-          </Link>
+        <header className="sticky top-0 z-40 w-full border-b border-[#e4d8c8] bg-[#fbf8f3]/95 backdrop-blur-md shadow-xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
 
-          {/* Center Navigation: Responsive Tabs for Investigation Hubs */}
-          <nav
-            aria-label="Investigation Navigation"
-            className="hidden lg:flex items-center space-x-1 p-1 rounded-lg bg-investigation-surface/80 border border-investigation-border/60 text-xs font-mono"
-          >
+            {/* Left: Operation Find Her Gift Identity */}
             <Link
               to="/archive"
-              onClick={() => soundFx.playKeypress()}
-              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
-                pathname === '/archive' || pathname === '/board'
-                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
-                  : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
-              }`}
+              className="flex items-center space-x-3 group focus:outline-none focus-visible:ring-1 focus-visible:ring-[#8b3a2b] rounded p-1"
+            >
+                <div className="w-9 h-9 rounded-full border border-[#c8a97e] flex items-center justify-center bg-[#fdfbf7] p-1 group-hover:border-[#8b3a2b] transition-colors shadow-xs">
+                  <img src="/seal.svg" alt="Investigation Seal" className="w-full h-full object-contain" />
+                </div>
+                <div>
+                    <div className="text-xs sm:text-sm font-editorial tracking-wide text-[#38261e] font-bold group-hover:text-[#8b3a2b] transition-colors flex items-center space-x-1.5">
+                      <span>OPERATION: FIND HER</span>
+                      <Heart className="w-3 h-3 text-[#c25e5e] fill-[#c25e5e] animate-pulse" />
+                    </div>
+                      <div className="text-[10px] font-mono tracking-wider text-[#8a7667] flex items-center space-x-2">
+                        <span>CASE NO. 012</span>
+                        <span>•</span>
+                        <span className="text-[#8b3a2b]/90 font-medium">A PERSONAL BIRTHDAY DOSSIER</span>
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Center Navigation: Responsive Tabs for Investigation Hubs */}
+                  <nav
+                    aria-label="Investigation Navigation"
+                    className="hidden lg:flex items-center space-x-1 p-1 rounded-xl bg-[#ede3d5]/70 border border-[#dfd2c0] text-xs font-mono"
+                  >
+                    <Link
+                      to="/archive"
+                      onClick={() => soundFx.playKeypress()}
+                              ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold shadow-xs'
+                              : 'text-[#6d5b52] hover:text-[#2d2016] hover:bg-[#fbf8f3]'
+                          }`}
             >
               <FolderSearch className="w-3.5 h-3.5" />
               <span>BOARD</span>
@@ -78,24 +76,21 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen: _currentScreen })
             <Link
               to="/scrapbook"
               onClick={() => soundFx.playKeypress()}
-              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
-                pathname === '/scrapbook'
-                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
-                  : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
-              }`}
+                      className = {`px-3 py-1.5 rounded-lg transition-all flex items-center space-x-1.5 ${pathname === '/scrapbook'
+                            ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold shadow-xs'
+                            : 'text-[#6d5b52] hover:text-[#2d2016] hover:bg-[#fbf8f3]'
+                        }`}
             >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>SCRAPBOOK</span>
-            </Link>
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>SCRAPBOOK</span>
+                  </Link>
 
-            <Link
-              to="/witnesses"
-              onClick={() => soundFx.playKeypress()}
-              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
-                pathname === '/witnesses'
-                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
-                  : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
-              }`}
+                  <Link
+                    to="/witnesses"
+                    onClick={() => soundFx.playKeypress()}
+                            ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold shadow-xs'
+                            : 'text-[#6d5b52] hover:text-[#2d2016] hover:bg-[#fbf8f3]'
+                        }`}
             >
               <Users className="w-3.5 h-3.5" />
               <span>WITNESSES & SUSPECTS</span>
@@ -104,31 +99,28 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen: _currentScreen })
             <Link
               to="/timeline"
               onClick={() => soundFx.playKeypress()}
-              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
-                pathname === '/timeline'
-                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
-                  : 'text-investigation-muted hover:text-parchment hover:bg-investigation-card'
-              }`}
+                    className = {`px-3 py-1.5 rounded-lg transition-all flex items-center space-x-1.5 ${pathname === '/timeline'
+                          ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold shadow-xs'
+                          : 'text-[#6d5b52] hover:text-[#2d2016] hover:bg-[#fbf8f3]'
+                      }`}
             >
-              <Compass className="w-3.5 h-3.5" />
-              <span>TIMELINE</span>
-            </Link>
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>TIMELINE</span>
+                </Link>
 
-            <Link
-              to="/gallery"
-              onClick={() => soundFx.playKeypress()}
-              className={`px-3 py-1.5 rounded transition-all flex items-center space-x-1.5 ${
-                pathname === '/gallery' || pathname === '/found'
-                  ? 'bg-brass text-charcoal-900 font-bold shadow-brass-sm'
-                  : isUnlocked
-                  ? 'text-brass-light hover:text-brass hover:bg-investigation-card'
-                  : 'text-investigation-muted/70 hover:text-investigation-muted hover:bg-investigation-card'
+                <Link
+                  to="/gallery"
+                  onClick={() => soundFx.playKeypress()}
+                          ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold shadow-xs'
+                          : isUnlocked
+                              ? 'text-[#8b3a2b] font-semibold hover:bg-[#fbf8f3]'
+                              : 'text-[#8a7667]/80 hover:text-[#2d2016] hover:bg-[#fbf8f3]'
               }`}
             >
               {isUnlocked ? (
-                <Sparkles className="w-3.5 h-3.5 text-brass animate-spin-slow" />
+                <Sparkles className="w-3.5 h-3.5 text-[#d4af37] animate-spin-slow" />
               ) : (
-                <Lock className="w-3 h-3 text-investigation-muted" />
+                <Lock className="w-3 h-3 text-[#8a7667]" />
               )}
               <span>SUBJECT FOUND (MASTER GALLERY)</span>
             </Link>
@@ -138,33 +130,33 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen: _currentScreen })
           <div className="flex items-center space-x-2 sm:space-x-3">
             <Link
               to="/archive"
-              className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-investigation-surface border border-brass/40 text-[11px] font-mono text-brass-light hover:border-brass transition-colors"
+              className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#f4ece1] border border-[#d8c8b4] text-[11px] font-mono text-[#8b3a2b] font-bold hover:border-[#8b3a2b] transition-colors shadow-xs"
               title="Clues inspected across investigation"
             >
-              <span className="font-bold">{inspectedIds.length}/3</span>
-              <span className="hidden sm:inline">CLUES</span>
+              <span>{inspectedIds.length}/3</span>
+              <span className="hidden sm:inline font-medium">CLUES</span>
             </Link>
 
-            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-investigation-surface border border-investigation-border text-[11px] font-mono text-investigation-muted">
-              <Shield className="w-3.5 h-3.5 text-brass" />
+            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[#f4ece1] border border-[#d8c8b4] text-[11px] font-mono text-[#6d5b52]">
+              <Shield className="w-3.5 h-3.5 text-[#8b3a2b]" />
               <span className="hidden sm:inline">LEVEL {isUnlocked ? '4' : '3'}</span>
               {isUnlocked ? (
-                <Unlock className="w-3 h-3 text-brass" />
+                <Unlock className="w-3 h-3 text-[#4f772d]" />
               ) : (
-                <Lock className="w-3 h-3 text-investigation-muted" />
+                <Lock className="w-3 h-3 text-[#8a7667]" />
               )}
             </div>
 
             <button
               onClick={handleToggleSound}
               aria-label={muted ? "Atmospheric audio is muted. Click to enable sound." : "Atmospheric audio is active. Click to mute sound."}
-              className="p-2 rounded border border-investigation-border hover:border-brass/60 bg-investigation-surface text-investigation-muted hover:text-brass transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
+              className="p-2 rounded-full border border-[#d8c8b4] hover:border-[#8b3a2b] bg-[#fdfbf7] text-[#6d5b52] hover:text-[#8b3a2b] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8b3a2b] shadow-xs"
               title={muted ? "Sound muted (click to enable)" : "Sound active (click to mute)"}
             >
               {muted ? (
-                <VolumeX className="w-4 h-4 text-investigation-muted" />
+                <VolumeX className="w-4 h-4 text-[#8a7667]" />
               ) : (
-                <Volume2 className="w-4 h-4 text-brass" />
+                <Volume2 className="w-4 h-4 text-[#8b3a2b]" />
               )}
             </button>
           </div>
@@ -172,62 +164,55 @@ export const Header: React.FC<HeaderProps> = ({ currentScreen: _currentScreen })
         </div>
 
         {/* Mobile Sub-Navigation Bar */}
-        <div className="lg:hidden flex items-center justify-around px-2 py-2 border-t border-investigation-border/40 bg-investigation-forest/90 overflow-x-auto text-[11px] font-mono">
+        <div className="lg:hidden flex items-center justify-around px-2 py-2 border-t border-[#e4d8c8] bg-[#f5ede2] overflow-x-auto text-[11px] font-mono">
           <Link
             to="/archive"
-            className={`px-2.5 py-1 rounded whitespace-nowrap ${
-              pathname === '/archive' || pathname === '/board'
-                ? 'bg-brass text-charcoal-900 font-bold'
-                : 'text-investigation-muted'
-            }`}
+                  className = {`px-2.5 py-1 rounded-lg whitespace-nowrap ${pathname === '/archive' || pathname === '/board'
+                        ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold'
+                        : 'text-[#6d5b52]'
+                    }`}
           >
-            BOARD
-          </Link>
-          <Link
-            to="/scrapbook"
-            className={`px-2.5 py-1 rounded whitespace-nowrap ${
-              pathname === '/scrapbook'
-                ? 'bg-brass text-charcoal-900 font-bold'
-                : 'text-investigation-muted'
-            }`}
+                BOARD
+            </Link>
+            <Link
+              to="/scrapbook"
+                      ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold'
+                      : 'text-[#6d5b52]'
+                  }`}
           >
             SCRAPBOOK
           </Link>
           <Link
             to="/witnesses"
-            className={`px-2.5 py-1 rounded whitespace-nowrap ${
-              pathname === '/witnesses'
-                ? 'bg-brass text-charcoal-900 font-bold'
-                : 'text-investigation-muted'
-            }`}
+              className = {`px-2.5 py-1 rounded-lg whitespace-nowrap ${pathname === '/witnesses'
+                    ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold'
+                    : 'text-[#6d5b52]'
+                }`}
           >
             WITNESSES
           </Link>
           <Link
             to="/timeline"
-            className={`px-2.5 py-1 rounded whitespace-nowrap ${
-              pathname === '/timeline'
-                ? 'bg-brass text-charcoal-900 font-bold'
-                : 'text-investigation-muted'
-            }`}
+                    ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold'
+                    : 'text-[#6d5b52]'
+                }`}
           >
             TIMELINE
           </Link>
           <Link
             to="/gallery"
-            className={`px-2.5 py-1 rounded whitespace-nowrap flex items-center space-x-1 ${
-              pathname === '/gallery' || pathname === '/found'
-                ? 'bg-brass text-charcoal-900 font-bold'
-                : isUnlocked
-                ? 'text-brass-light'
-                : 'text-investigation-muted/70'
+            className = {`px-2.5 py-1 rounded-lg whitespace-nowrap flex items-center space-x-1 ${pathname === '/gallery' || pathname === '/found'
+                  ? 'bg-[#8b3a2b] text-[#faf6f0] font-bold'
+                  : isUnlocked
+                      ? 'text-[#8b3a2b] font-bold'
+                      : 'text-[#8a7667]'
             }`}
           >
-            {isUnlocked ? <Sparkles className="w-3 h-3 text-brass" /> : <Lock className="w-2.5 h-2.5" />}
-            <span>FOUND</span>
-          </Link>
-        </div>
-      </header>
+          {isUnlocked ? <Sparkles className="w-3 h-3 text-[#d4af37]" /> : <Lock className="w-2.5 h-2.5" />}
+          <span>FOUND</span>
+        </Link>
+      </div>
+    </header >
     </>
   );
 };

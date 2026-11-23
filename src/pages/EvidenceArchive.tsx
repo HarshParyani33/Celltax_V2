@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Eye, 
-  Sparkles, 
-  Layers, 
-  BookOpen, 
-  Mail, 
-  Radio, 
-  Users, 
-  Compass, 
-  Heart, 
-  Pin, 
-  Lock, 
-  ArrowRight 
+import {
+  Eye,
+  Sparkles,
+  BookOpen,
+  Mail,
+  Radio,
+  Users,
+  Compass,
+  Heart,
+  Pin,
+  Lock,
+  ArrowRight,
+  Gift,
+  Smile,
+  Bookmark
 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -22,9 +24,9 @@ import { LetterModal } from '../components/LetterModal';
 import { AudioPlayerWidget } from '../components/AudioPlayerWidget';
 import { EVIDENCE_COLLECTION } from '../data/evidence';
 import { EvidenceItem } from '../types';
-import { 
-  INTERACTIVE_LETTERS, 
-  PERSONAL_QUIRK_NOTES, 
+import {
+  INTERACTIVE_LETTERS,
+  PERSONAL_QUIRK_NOTES,
   LetterData
 } from '../data/findHerData';
 import { soundFx } from '../utils/audio';
@@ -44,7 +46,7 @@ export const EvidenceArchive: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<EvidenceItem | null>(null);
   const [selectedLetter, setSelectedLetter] = useState<LetterData | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'photograph' | 'document' | 'artefact'>('all');
-  
+
   const { inspectedIds, markInspected, isUnlocked, hasInspected } = useProgression();
 
   const filteredItems = EVIDENCE_COLLECTION.filter((item) => {
@@ -75,428 +77,487 @@ export const EvidenceArchive: React.FC = () => {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="min-h-screen flex flex-col bg-investigation-base text-investigation-text selection:bg-brass selection:text-charcoal-900"
+      className="min-h-screen flex flex-col bg-[#faf6f0] text-[#38261e] texture-desk selection:bg-[#d99b9b] selection:text-[#38261e]"
     >
       <Header currentScreen="archive" />
 
-      {/* Main Corkboard / Evidence Desk Interface */}
+      {/* Main Keepsake Hub Interface */}
       <main
         id="main-content"
-        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10"
+        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12"
       >
         {/* Top Board Header & Status Overview */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-investigation-border/60">
-          <div>
-            <div className="flex items-center space-x-2 text-xs font-mono text-investigation-muted mb-2 tracking-wider">
-              <span className="text-brass">OPERATION: FIND HER</span>
-              <span>•</span>
-              <span>CENTRAL INVESTIGATION BOARD</span>
-              <span>•</span>
-              <span>CASE 012</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-black text-parchment tracking-wide flex items-center space-x-2">
-              <span>THE INVESTIGATION BOARD</span>
-              <Heart className="w-5 h-5 text-red-500 fill-red-500 inline animate-pulse" />
-            </h1>
-            <p className="text-sm font-sans text-investigation-muted max-w-2xl mt-1 leading-relaxed">
-              Examine the pinned evidence, inspect the polaroids, open recovered letters, and listen to the voice dispatches. Every clue reveals what makes her irreplaceable.
-            </p>
-          </div>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#e8dcce]">
+            <div>
+                <div className="flex items-center space-x-2 text-xs font-mono text-[#7a685c] mb-2 tracking-wider">
+                  <span className="text-[#8c5e58] font-bold">OPERATION: FIND HER</span>
+                  <span>•</span>
+                  <span>KEEPSAKE HUB // CASE 012</span>
+                </div>
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black text-[#38261e] tracking-tight flex items-center space-x-3">
+                    <span>HER LITTLE WORLD</span>
+                    <Heart className="w-6 h-6 text-[#d99b9b] fill-[#d99b9b] inline animate-pulse" />
+                  </h1>
+                    <p className="text-sm font-sans text-[#7a685c] max-w-2xl mt-2 leading-relaxed">
+                      Welcome to the keepsakes, letters, voice notes, and memories collected just for you. Explore each section below to uncover every clue leading to your birthday surprise.
+                    </p>
+                  </div>
 
-          {/* Progress / Catalog Counter */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="px-4 py-2.5 rounded bg-investigation-forest border border-brass/40 font-mono text-xs text-brass-light flex items-center space-x-2 shadow-brass-sm">
-              <Layers className="w-4 h-4 text-brass" />
-              <span>CORE CLUES EXAMINED: {inspectedIds.length} / {EVIDENCE_COLLECTION.length}</span>
-            </div>
+                  {/* Progress / Catalog Counter (Keeps test required text intact) */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      <div className="px-4 py-2.5 rounded-full bg-[#fbf8f4] border border-[#e8dcce] font-mono text-xs text-[#5c3d2e] flex items-center space-x-2 shadow-sm">
+                        <Bookmark className="w-4 h-4 text-[#c5a059]" />
+                        <span className="font-semibold">CORE CLUES EXAMINED: {inspectedIds.length} / {EVIDENCE_COLLECTION.length}</span>
+                      </div>
 
-            {isUnlocked ? (
-              <Link
-                to="/gallery"
-                onClick={() => soundFx.playAccessGranted()}
-                className="px-4 py-2.5 rounded bg-brass hover:bg-brass-light text-charcoal-900 font-serif font-bold text-xs tracking-wider uppercase flex items-center space-x-2 shadow-brass animate-bounce"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>ENTER GALLERY // SUBJECT FOUND</span>
-              </Link>
-            ) : (
-              <div className="px-3 py-2 rounded bg-investigation-surface border border-investigation-border text-xs font-mono text-investigation-muted flex items-center space-x-1.5">
-                <Lock className="w-3.5 h-3.5 text-investigation-muted" />
-                <span>FINAL LETTER LOCKED</span>
-              </div>
+                      {isUnlocked ? (
+                        <Link
+                          to="/gallery"
+                          onClick={() => soundFx.playAccessGranted()}
+                          className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#d99b9b] via-[#c58585] to-[#9c5460] text-white font-serif font-bold text-xs tracking-wider uppercase flex items-center space-x-2 shadow-md hover:shadow-lg animate-bounce"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>ENTER GALLERY // SUBJECT FOUND</span>
+                        </Link>
+                      ) : (
+                          <div className="px-4 py-2 rounded-full bg-[#fbf8f4] border border-[#e8dcce] text-xs font-mono text-[#7a685c] flex items-center space-x-1.5">
+                            <Lock className="w-3.5 h-3.5 text-[#7a685c]" />
+                            <span>FINAL LETTER LOCKED ({inspectedIds.length}/3)</span>
+                          </div>
             )}
-          </div>
+                        </div>
         </div>
 
-        {/* Quick Navigation Cards: Scrapbook, Witnesses & Suspects Hubs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Link
-            to="/scrapbook"
-            onClick={() => soundFx.playKeypress()}
-            className="p-4 rounded-lg bg-investigation-card/80 border border-investigation-border hover:border-brass/70 transition-all flex items-center space-x-4 group shadow-md"
-          >
-            <div className="w-12 h-12 rounded bg-investigation-surface border border-brass/40 flex items-center justify-center text-brass group-hover:scale-105 transition-transform shrink-0">
-              <BookOpen className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-serif font-bold text-parchment text-sm group-hover:text-brass-light transition-colors">
-                The Physical Scrapbook
-              </div>
-              <div className="text-[11px] font-mono text-investigation-muted mt-0.5">
-                Multipage photo album & washi tape memories &rarr;
-              </div>
-            </div>
-          </Link>
+                      {/* PRIMARY DESTINATIONS: The Keepsake Collection Showcase Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <Link
+                          to="/scrapbook"
+                          onClick={() => soundFx.playKeypress()}
+                          className="group p-5 rounded-2xl bg-[#ffffff] border border-[#e8dcce] hover:border-[#d99b9b] transition-all duration-300 shadow-gift hover:shadow-xl flex items-start space-x-4"
+                        >
+                            <div className="w-12 h-12 rounded-xl bg-[#fceeeb] text-[#d99b9b] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                              <BookOpen className="w-6 h-6" />
+                            </div>
+                                <div className="space-y-1">
+                                  <div className="font-serif font-bold text-[#38261e] text-base group-hover:text-[#8c5e58] transition-colors flex items-center space-x-1.5">
+                                    <span>The Physical Scrapbook</span>
+                                    <ArrowRight className="w-3.5 h-3.5 text-[#d99b9b] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                  </div>
+                                  <p className="text-xs text-[#7a685c] leading-relaxed">
+                                    A real 3D memory album with turning pages, washi tape, stamps, and handwritten memories.
+                                  </p>
+                                </div>
+                              </Link>
 
-          <Link
-            to="/witnesses"
-            onClick={() => soundFx.playKeypress()}
-            className="p-4 rounded-lg bg-investigation-card/80 border border-investigation-border hover:border-brass/70 transition-all flex items-center space-x-4 group shadow-md"
-          >
-            <div className="w-12 h-12 rounded bg-investigation-surface border border-brass/40 flex items-center justify-center text-brass group-hover:scale-105 transition-transform shrink-0">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-serif font-bold text-parchment text-sm group-hover:text-brass-light transition-colors">
-                Witnesses & Suspects
-              </div>
-              <div className="text-[11px] font-mono text-investigation-muted mt-0.5">
-                Friend statements & absurd alibis &rarr;
-              </div>
-            </div>
-          </Link>
+                              <a
+                                href="#letters-section"
+                                onClick={() => soundFx.playKeypress()}
+                                className="group p-5 rounded-2xl bg-[#ffffff] border border-[#e8dcce] hover:border-[#d99b9b] transition-all duration-300 shadow-gift hover:shadow-xl flex items-start space-x-4"
+                              >
+                                <div className="w-12 h-12 rounded-xl bg-[#fdfaf5] text-[#c5a059] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                  <Mail className="w-6 h-6" />
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="font-serif font-bold text-[#38261e] text-base group-hover:text-[#8c5e58] transition-colors flex items-center space-x-1.5">
+                                    <span>Keepsake Letters</span>
+                                    <ArrowRight className="w-3.5 h-3.5 text-[#c5a059] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                  </div>
+                                  <p className="text-xs text-[#7a685c] leading-relaxed">
+                                    4 physical wax-sealed envelopes that open, unfold, and reveal affectionate messages.
+                                  </p>
+                                </div>
+                              </a>
 
-          <Link
-            to="/timeline"
-            onClick={() => soundFx.playKeypress()}
-            className="p-4 rounded-lg bg-investigation-card/80 border border-investigation-border hover:border-brass/70 transition-all flex items-center space-x-4 group shadow-md"
-          >
-            <div className="w-12 h-12 rounded bg-investigation-surface border border-brass/40 flex items-center justify-center text-brass group-hover:scale-105 transition-transform shrink-0">
-              <Compass className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="font-serif font-bold text-parchment text-sm group-hover:text-brass-light transition-colors">
-                Investigation Timeline
-              </div>
-              <div className="text-[11px] font-mono text-investigation-muted mt-0.5">
-                Chronological clue trail & connections &rarr;
-              </div>
-            </div>
-          </Link>
-        </div>
+                              <a
+                                href="#audio-section"
+                                onClick={() => soundFx.playKeypress()}
+                                className="group p-5 rounded-2xl bg-[#ffffff] border border-[#e8dcce] hover:border-[#d99b9b] transition-all duration-300 shadow-gift hover:shadow-xl flex items-start space-x-4"
+                              >
+                                <div className="w-12 h-12 rounded-xl bg-[#eef3ea] text-[#9caf88] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                  <Radio className="w-6 h-6" />
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="font-serif font-bold text-[#38261e] text-base group-hover:text-[#8c5e58] transition-colors flex items-center space-x-1.5">
+                                    <span>Voice Notes Deck</span>
+                                    <ArrowRight className="w-3.5 h-3.5 text-[#9caf88] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                  </div>
+                                  <p className="text-xs text-[#7a685c] leading-relaxed">
+                                    Vintage cassette deck with rotating spools and audio recordings from your favorite people.
+                                  </p>
+                                </div>
+                              </a>
 
-        {/* SECTION 1: PHYSICAL CORE EVIDENCE EXHIBITS */}
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-xl font-serif font-bold text-brass-light flex items-center space-x-2">
-              <Pin className="w-4 h-4 text-red-500 fill-red-500 transform rotate-12" />
-              <span>PINNED FORENSIC EXHIBITS</span>
-            </h2>
+                              <Link
+                                to="/witnesses"
+                                onClick={() => soundFx.playKeypress()}
+                                className="group p-5 rounded-2xl bg-[#ffffff] border border-[#e8dcce] hover:border-[#d99b9b] transition-all duration-300 shadow-gift hover:shadow-xl flex items-start space-x-4"
+                              >
+                                  <div className="w-12 h-12 rounded-xl bg-[#fceeeb] text-[#8c5e58] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                    <Users className="w-6 h-6" />
+                                  </div>
+                                      <div className="space-y-1">
+                                        <div className="font-serif font-bold text-[#38261e] text-base group-hover:text-[#8c5e58] transition-colors flex items-center space-x-1.5">
+                                          <span>Her People & Suspects</span>
+                                          <ArrowRight className="w-3.5 h-3.5 text-[#8c5e58] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                        </div>
+                                        <p className="text-xs text-[#7a685c] leading-relaxed">
+                                          Friend testimonies and hilarious fictional suspects with interactive cross-examinations.
+                                        </p>
+                                      </div>
+                                    </Link>
 
-            {/* Filter Buttons */}
-            <div
-              role="group"
-              aria-label="Filter evidence exhibits by category"
-              className="flex items-center space-x-2 overflow-x-auto"
-            >
-              {FILTER_OPTIONS.map((filter) => {
-                const isSelected = activeFilter === filter.id;
-                return (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => {
-                      soundFx.playKeypress();
-                      setActiveFilter(filter.id);
-                    }}
-                    className={`
-                      px-3 py-1.5 rounded text-xs font-mono tracking-wider transition-all border whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-brass
+                                    <Link
+                                      to="/timeline"
+                                      onClick={() => soundFx.playKeypress()}
+                                      className="group p-5 rounded-2xl bg-[#ffffff] border border-[#e8dcce] hover:border-[#d99b9b] transition-all duration-300 shadow-gift hover:shadow-xl flex items-start space-x-4"
+                                    >
+                                        <div className="w-12 h-12 rounded-xl bg-[#fdfaf5] text-[#c5a059] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                          <Compass className="w-6 h-6" />
+                                        </div>
+                                            <div className="space-y-1">
+                                              <div className="font-serif font-bold text-[#38261e] text-base group-hover:text-[#8c5e58] transition-colors flex items-center space-x-1.5">
+                                                <span>The Chronological Trail</span>
+                                                <ArrowRight className="w-3.5 h-3.5 text-[#c5a059] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                              </div>
+                                                <p className="text-xs text-[#7a685c] leading-relaxed">
+                                                  A connected timeline tracing how all the milestones and clues piece together.
+                                                </p>
+                                              </div>
+                                            </Link>
+
+                                            <Link
+                                              to="/gallery"
+                                              onClick={() => soundFx.playKeypress()}
+                                              className="group p-5 rounded-2xl bg-gradient-to-br from-[#fceeeb] via-[#ffffff] to-[#fbf8f4] border border-[#d99b9b]/50 hover:border-[#d99b9b] transition-all duration-300 shadow-gift hover:shadow-xl flex items-start space-x-4"
+                                            >
+                                              <div className="w-12 h-12 rounded-xl bg-[#d99b9b] text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                                                <Gift className="w-6 h-6 animate-pulse" />
+                                              </div>
+                                              <div className="space-y-1">
+                                                <div className="font-serif font-bold text-[#38261e] text-base group-hover:text-[#8c5e58] transition-colors flex items-center space-x-1.5">
+                                                  <span>The Final Surprise</span>
+                                                  <Sparkles className="w-3.5 h-3.5 text-[#c5a059]" />
+                                                </div>
+                                                <p className="text-xs text-[#7a685c] leading-relaxed">
+                                                  The grand scenic reveal at golden hour, photo series, and heartfelt birthday message.
+                                                </p>
+                                              </div>
+                                            </Link>
+                                          </div>
+
+                                                {/* SECTION 1: POLAROID EVIDENCE EXHIBITS (Maintains E2E Test Compatibility) */}
+                                                <section className="space-y-6 pt-4">
+                                                  <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-[#e8dcce]">
+                                                    <h2 className="text-2xl font-serif font-bold text-[#38261e] flex items-center space-x-2">
+                                                      <Pin className="w-5 h-5 text-[#d99b9b] fill-[#d99b9b] transform rotate-12" />
+                                                      <span>PINNED FORENSIC EXHIBITS</span>
+                                                    </h2>
+
+                                                    {/* Filter Buttons (Required by E2E test: ALL EXHIBITS & PHOTOGRAPHS) */}
+                                                    <div
+                                                      role="group"
+                                                      aria-label="Filter evidence exhibits by category"
+                                                      className="flex items-center space-x-2 overflow-x-auto"
+                                                    >
+                                                      {FILTER_OPTIONS.map((filter) => {
+                                                        const isSelected = activeFilter === filter.id;
+                                                        return (
+                                                          <button
+                                                            key={filter.id}
+                                                            type="button"
+                                                            aria-pressed={isSelected}
+                                                            onClick={() => {
+                                                              soundFx.playKeypress();
+                                                              setActiveFilter(filter.id);
+                                                            }}
+                                                            className={`
+                      px-4 py-1.5 rounded-full text-xs font-mono tracking-wider transition-all border whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059]
                       ${isSelected
-                        ? 'bg-brass text-charcoal-900 border-brass font-bold shadow-brass-sm'
-                        : 'bg-investigation-surface hover:bg-investigation-card text-investigation-muted hover:text-parchment border-investigation-border'}
+                        ? 'bg-[#d99b9b] text-white border-[#d99b9b] font-bold shadow-sm'
+                        : 'bg-[#ffffff] hover:bg-[#fceeeb] text-[#7a685c] hover:text-[#38261e] border-[#e8dcce]'}
                     `}
-                  >
-                    <span>{filter.label} ({filter.count})</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                                                          >
+                                                            <span>{filter.label} ({filter.count})</span>
+                                                          </button>
+                                                        );
+                                                      })}
+                                                    </div>
+                                                  </div>
 
-          {/* Exhibits Grid (Polaroid Style Cards) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredItems.map((item, index) => {
-              const isItemInspected = hasInspected(item.id);
+                                                  {/* Exhibits Grid (Polaroid Style Cards) */}
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                                                    {filteredItems.map((item, index) => {
+                                                      const isItemInspected = hasInspected(item.id);
 
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: shouldReduceMotion ? 0.01 : 0.4,
-                    delay: shouldReduceMotion ? 0 : index * 0.1,
-                  }}
-                  whileHover={shouldReduceMotion ? undefined : { y: -6 }}
-                  className="group relative flex flex-col rounded-lg bg-investigation-surface border border-investigation-border hover:border-brass/70 shadow-evidenceCard hover:shadow-spotlight transition-all duration-300 overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brass"
-                  onClick={() => handleInspect(item)}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`Inspect evidence item ${item.code}: ${item.title}`}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleInspect(item);
-                    }
-                  }}
-                >
-                  {/* Top Identification Header */}
-                  <div className="px-4 py-2.5 bg-investigation-card border-b border-investigation-border flex items-center justify-between text-xs font-mono">
-                    <div className="flex items-center space-x-2">
-                      <span className="w-2 h-2 rounded-full bg-brass" />
-                      <span className="font-bold text-brass-light tracking-widest">{item.code}</span>
-                    </div>
-                    <span className="text-[10px] uppercase tracking-wider text-investigation-muted px-2 py-0.5 rounded bg-investigation-forest border border-investigation-border">
-                      {item.type}
-                    </span>
-                  </div>
+                                                      return (
+                                                        <motion.div
+                                                          key={item.id}
+                                                          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+                                                          animate={{ opacity: 1, y: 0 }}
+                                                          transition={{
+                                                            duration: shouldReduceMotion ? 0.01 : 0.4,
+                                                            delay: shouldReduceMotion ? 0 : index * 0.1,
+                                                          }}
+                                                          whileHover={shouldReduceMotion ? undefined : { y: -6 }}
+                                                          className="group relative flex flex-col rounded-2xl bg-[#ffffff] border border-[#e8dcce] hover:border-[#d99b9b] shadow-polaroid hover:shadow-2xl transition-all duration-300 overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a059]"
+                                                          onClick={() => handleInspect(item)}
+                                                          tabIndex={0}
+                                                          role="button"
+                                                          aria-label={`Inspect evidence item ${item.code}: ${item.title}`}
+                                                          onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                              e.preventDefault();
+                                                              handleInspect(item);
+                                                            }
+                                                          }}
+                                                        >
+                                                            {/* Top Polaroid Accent Bar */}
+                                                            <div className="px-5 py-3 bg-[#fbf8f4] border-b border-[#f0e6dc] flex items-center justify-between text-xs font-mono">
+                                                              <div className="flex items-center space-x-2">
+                                                                <span className={`w-2.5 h-2.5 rounded-full ${isItemInspected ? 'bg-[#9caf88]' : 'bg-[#d99b9b]'}`} />
+                                                                <span className="font-bold text-[#8c5e58]">{item.code}</span>
+                                                              </div>
+                                                                <span className="text-[10px] uppercase font-semibold px-2.5 py-0.5 rounded-full bg-[#fceeeb] text-[#8c5e58]">
+                                                                  {item.type}
+                                                                </span>
+                                                            </div>
 
-                  {/* Exhibit Visual Canvas / Frame */}
-                  <div className="relative aspect-[4/3] w-full bg-charcoal-900 overflow-hidden border-b border-investigation-border">
-                    <picture className="w-full h-full">
-                      {item.webpUrl && (
-                        <source srcSet={item.webpUrl} type="image/webp" />
-                      )}
-                      <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    </picture>
+                                                              {/* Exhibit Image */}
+                                                              <div className="relative aspect-[4/3] w-full bg-[#f5eee4] overflow-hidden">
+                                                                <picture className="w-full h-full">
+                                                                  {item.webpUrl && <source srcSet={item.webpUrl} type="image/webp" />}
+                                                                  <img
+                                                                    src={item.imageUrl}
+                                                                    alt={item.title}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                                  />
+                                                                </picture>
+                                                                <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-investigation-surface/90 via-transparent to-black/30 pointer-events-none" />
-
-                    {/* Stamp Badge */}
-                    <div className="absolute top-2.5 right-2.5 pointer-events-none">
-                      <span className="stamp-confidential text-[9px] px-1.5 py-0.5">
-                        EVIDENCE
-                      </span>
-                    </div>
-
-                    {/* Inspect CTA Hover Pill */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px]">
-                      <div className="px-4 py-2 rounded-full bg-brass text-charcoal-900 font-mono text-xs font-bold tracking-widest flex items-center space-x-2 shadow-brass">
-                        <Eye className="w-4 h-4" />
-                        <span>INSPECT CLUE</span>
-                      </div>
-                    </div>
-
-                    {/* Inspected Marker */}
-                    {isItemInspected && (
-                      <div className="absolute bottom-2 left-2 text-[10px] font-mono px-2 py-0.5 rounded bg-investigation-forest/90 border border-brass/40 text-brass flex items-center space-x-1">
-                        <span>✓ EXAMINED</span>
-                      </div>
+                                                                {isItemInspected && (
+                                                                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-mono font-bold text-[#4f614b] shadow-sm flex items-center space-x-1">
+                                                                      <span>✓ EXAMINED</span>
+                                                                    </div>
                     )}
-                  </div>
+                                                                  </div>
 
-                  {/* Card Information */}
-                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                    <div>
-                      <h3 className="font-serif font-bold text-base text-parchment group-hover:text-brass-light transition-colors line-clamp-1">
-                        {item.title}
-                      </h3>
-                      <p className="text-xs font-sans text-investigation-muted mt-1.5 line-clamp-2 leading-relaxed">
-                        {item.summary}
-                      </p>
-                    </div>
+                                                                  {/* Exhibit Details */}
+                                                                  <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                                                                    <div>
+                                                                        <h3 className="font-serif font-bold text-[#38261e] text-base group-hover:text-[#8c5e58] transition-colors leading-snug">
+                                                                          {item.title}
+                                                                        </h3>
+                                                                          <p className="text-xs text-[#7a685c] mt-1.5 line-clamp-2 leading-relaxed">
+                                                                            {item.summary}
+                                                                          </p>
+                                                                        </div>
 
-                    {/* Metadata Chips */}
-                    <div className="pt-3 border-t border-investigation-border/60 flex items-center justify-between text-[11px] font-mono text-investigation-muted">
-                      <span>LOCATION: {item.origin.split(' ')[0]}</span>
-                      <span className="text-brass">CONFIDENCE: {item.confidenceScore}%</span>
-                    </div>
-                  </div>
-                </motion.div>
-              );
+                                                                          <div className="pt-3 border-t border-[#f0e6dc] flex items-center justify-between text-[11px] font-mono text-[#7a685c]">
+                                                                            <span>{item.dateDiscovered}</span>
+                                                                            <span className="text-[#8c5e58] font-bold group-hover:translate-x-1 transition-transform flex items-center space-x-1">
+                                                                              <Eye className="w-3.5 h-3.5 inline mr-1" />
+                                                                              <span>INSPECT</span>
+                                                                            </span>
+                                                                          </div>
+                                                                        </div>
+                                                                      </motion.div>
+                                                                      );
             })}
-          </div>
-        </section>
+                                                                    </div>
+                                                                  </section>
 
-        {/* SECTION 2: RECOVERED LETTERS & ENVELOPES */}
-        <section className="space-y-4 pt-4 border-t border-investigation-border/60">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-serif font-bold text-brass-light flex items-center space-x-2">
-              <Mail className="w-4 h-4 text-brass" />
-              <span>RECOVERED LETTERS & SEALED DISPATCHES</span>
-            </h2>
-            <span className="text-xs font-mono text-investigation-muted">
-              CLICK ANY ENVELOPE TO BREAK SEAL & READ
-            </span>
-          </div>
+                                                                        {/* SECTION 2: INTERACTIVE LETTERS & ENVELOPES */}
+                                                                        <section id="letters-section" className="space-y-6 pt-6 border-t border-[#e8dcce]">
+                                                                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                                            <div>
+                                                                              <h2 className="text-2xl font-serif font-bold text-[#38261e] flex items-center space-x-2">
+                                                                                <Mail className="w-5 h-5 text-[#c5a059]" />
+                                                                                <span>KEEPSAKE LETTERS & ENVELOPES</span>
+                                                                              </h2>
+                                                                              <p className="text-xs text-[#7a685c] mt-0.5">
+                                                                                Physical envelopes sealed with red wax. Click any letter to break the seal and unfold the note.
+                                                                              </p>
+                                                                            </div>
+                                                                            <span className="text-xs font-mono text-[#8c5e58]">
+                                                                              4 CORRESPONDENCE ENVELOPES
+                                                                            </span>
+                                                                          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {INTERACTIVE_LETTERS.map((letter) => {
-              const isFinal = letter.isFinalLetter;
-              return (
-                <div
-                  key={letter.id}
-                  onClick={() => handleOpenLetter(letter)}
-                  className={`
-                    p-5 rounded-lg border cursor-pointer transition-all transform hover:-translate-y-1 shadow-lg relative flex flex-col justify-between space-y-4
+                                                                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                                                                            {INTERACTIVE_LETTERS.map((letter) => {
+                                                                              const isFinal = letter.id === 'letter-final';
+
+                                                                              return (
+                                                                                <div
+                                                                                  key={letter.id}
+                                                                                  className={`
+                    p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between space-y-4 shadow-sm hover:shadow-lg
                     ${isFinal
-                      ? 'bg-gradient-to-b from-[#251e13] to-[#16120b] border-brass/70 hover:border-brass shadow-brass'
-                      : 'bg-investigation-card border-investigation-border hover:border-brass/50'}
+                                                                                      ? 'bg-gradient-to-br from-[#fceeeb] via-[#ffffff] to-[#fbf8f4] border-[#d99b9b] hover:border-[#b87383]'
+                                                                                      : 'bg-[#ffffff] border-[#e8dcce] hover:border-[#c5a059]'}
                   `}
-                >
-                  {isFinal && (
-                    <div className="absolute -top-3 right-3 stamp-confidential text-[9px] bg-red-950/80 border-brass text-brass">
-                      KEY CLUE
-                    </div>
-                  )}
+                                                                                >
+                                                                                      <div className="space-y-3">
+                                                                                        <div className="flex items-center justify-between">
+                                                                                          <div className="w-8 h-8 rounded-full bg-[#fbf8f4] border border-[#e8dcce] flex items-center justify-center font-mono text-xs font-bold text-[#8c5e58]">
+                                                                                            {letter.id}
+                                                                                          </div>
+                                                                                          <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full ${isFinal ? 'bg-[#d99b9b] text-white font-bold' : 'bg-[#fbf8f4] text-[#7a685c]'}`}>
+                                                                                            {isFinal ? 'FINAL CLUE' : 'SEALED'}
+                                                                                          </span>
+                                                                                        </div>
 
-                  <div className="space-y-2">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shadow"
-                         style={{ backgroundColor: letter.sealColor }}>
-                      {letter.sealText.slice(0, 3)}
-                    </div>
+                                                                                            <div>
+                                                                                              <h3 className="font-serif font-bold text-[#38261e] text-sm">
+                                                                                                {letter.title}
+                                                                                              </h3>
+                                                                                              <div className="text-[11px] font-mono text-[#7a685c] mt-1">
+                                                                                                FROM: {letter.sender}
+                                                                                              </div>
+                                                                                            </div>
 
-                    <h3 className="font-serif font-bold text-sm text-parchment leading-snug">
-                      {letter.title}
-                    </h3>
-                    <p className="text-[11px] font-mono text-brass">
-                      FROM: {letter.sender}
-                    </p>
-                    <p className="text-xs font-sans text-investigation-muted line-clamp-2 italic">
-                      "{letter.previewSnippet}"
-                    </p>
-                  </div>
+                                                                                              <p className="font-handwriting text-base text-[#5c3d2e] italic line-clamp-2 leading-relaxed">
+                                                                                                "{letter.previewSnippet}"
+                                                                                              </p>
+                                                                                          </div>
 
-                  <div className="pt-2 border-t border-investigation-border/40 flex items-center justify-between text-[11px] font-mono text-brass-light">
-                    <span>{isFinal ? 'SEALED OVERLOOK DISPATCH' : 'OPEN ENVELOPE'}</span>
-                    <span>&rarr;</span>
-                  </div>
-                </div>
-              );
+                                                                                            <button
+                                                                                              type="button"
+                                                                                              onClick={() => handleOpenLetter(letter)}
+                                                                                              className={`
+                      w-full py-2.5 rounded-xl font-serif text-xs font-bold tracking-wider uppercase transition-all flex items-center justify-center space-x-1.5 shadow-sm
+                      ${isFinal
+                                                                                                  ? 'bg-gradient-to-r from-[#d99b9b] to-[#9c5460] hover:brightness-105 text-white'
+                                                                                                  : 'bg-[#fbf8f4] hover:bg-[#fceeeb] text-[#8c5e58] border border-[#e8dcce]'}
+                    `}
+                                                                                            >
+                                                                                              <span>{isFinal ? 'SEALED OVERLOOK DISPATCH' : 'OPEN ENVELOPE'}</span>
+                                                                                          <ArrowRight className="w-3.5 h-3.5" />
+                                                                                        </button>
+                                                                                      </div>
+                                                                                      );
             })}
-          </div>
+                                                                                    </div>
         </section>
 
-        {/* SECTION 3: VINTAGE AUDIO SURVEILLANCE EVIDENCE PLAYER */}
-        <section className="space-y-4 pt-4 border-t border-investigation-border/60">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-serif font-bold text-brass-light flex items-center space-x-2">
-              <Radio className="w-4 h-4 text-brass" />
-              <span>RECOVERED AUDIO DISPATCHES & VOICE NOTES</span>
-            </h2>
-          </div>
-          <AudioPlayerWidget />
-        </section>
+                                                                                {/* SECTION 3: VINTAGE AUDIO KEEPSAKE RECORDER */}
+                                                                                <section id="audio-section" className="space-y-4 pt-6 border-t border-[#e8dcce]">
+                                                                                  <div className="flex items-center justify-between">
+                                                                                      <h2 className="text-2xl font-serif font-bold text-[#38261e] flex items-center space-x-2">
+                                                                                        <Radio className="w-5 h-5 text-[#9caf88]" />
+                                                                                        <span>VINTAGE VOICE NOTES & CASSETTE KEEPSAKES</span>
+                                                                                      </h2>
+                                                                                  </div>
+                                                                                  <AudioPlayerWidget />
+                                                                                </section>
 
-        {/* SECTION 4: PINNED PERSONAL NOTES & CLUES (STICKY NOTES) */}
-        <section className="space-y-4 pt-4 border-t border-investigation-border/60">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-serif font-bold text-brass-light flex items-center space-x-2">
-              <Pin className="w-4 h-4 text-brass" />
-              <span>INVESTIGATOR's FIELD NOTES & PERSONAL QUIRKS</span>
-            </h2>
-            <span className="text-xs font-mono text-investigation-muted">
-              OBSERVATIONS ON HER HABITS & SMILE
-            </span>
-          </div>
+                                                                                      {/* SECTION 4: LITTLE DISCOVERIES & PERSONAL QUIRKS (STICKY NOTES) */}
+                                                                                      <section className="space-y-4 pt-6 border-t border-[#e8dcce]">
+                                                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                                                          <div>
+                                                                                            <h2 className="text-2xl font-serif font-bold text-[#38261e] flex items-center space-x-2">
+                                                                                              <Smile className="w-5 h-5 text-[#d99b9b]" />
+                                                                                              <span>LITTLE DISCOVERIES & OBSERVATIONS</span>
+                                                                                            </h2>
+                                                                                            <p className="text-xs text-[#7a685c] mt-0.5">
+                                                                                              Affectionate field notes documenting the little things that make you completely unforgettable.
+                                                                                            </p>
+                                                                                          </div>
+                                                                                          <span className="text-xs font-mono text-[#8c5e58]">
+                                                                                            HER UNIQUE HABITS & SMILE
+                                                                                          </span>
+                                                                                        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PERSONAL_QUIRK_NOTES.map((note) => {
-              const bgColors = {
-                yellow: 'bg-[#fef9c3] text-[#713f12]',
-                pink: 'bg-[#ffe4e6] text-[#881337]',
-                cyan: 'bg-[#cffafe] text-[#164e63]',
-                green: 'bg-[#dcfce7] text-[#14532d]'
-              };
+                                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                                                          {PERSONAL_QUIRK_NOTES.map((note) => {
+                                                                                            const bgColors = {
+                yellow: 'bg-[#fefce8] text-[#713f12] border-[#fef08a]',
+                                                                                              pink: 'bg-[#fff1f2] text-[#881337] border-[#fecdd3]',
+                                                                                              cyan: 'bg-[#ecfeff] text-[#164e63] border-[#a5f3fc]',
+                                                                                              green: 'bg-[#f0fdf4] text-[#14532d] border-[#bbf7d0]'
+                                                                                            };
 
-              return (
-                <div
-                  key={note.id}
-                  className={`p-4 rounded shadow-lg border border-black/10 space-y-2.5 transition-transform hover:scale-105 duration-200 ${bgColors[note.color]}`}
-                  style={{ transform: `rotate(${note.tiltDegree}deg)` }}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: note.pinColor }} />
-                    <span className="font-mono text-[9px] uppercase tracking-wider font-bold opacity-75">
-                      STICKY NOTE
-                    </span>
-                  </div>
+                                                                                            return (
+                                                                                              <div
+                                                                                                key={note.id}
+                                                                                                className={`p-5 rounded-2xl shadow-sm hover:shadow-md border space-y-3 transition-transform hover:-translate-y-1 duration-200 ${bgColors[note.color]}`}
+                                                                                                style={{ transform: `rotate(${note.tiltDegree}deg)` }}
+                                                                                              >
+                                                                                                <div className="flex items-center justify-between">
+                                                                                                  <span className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: note.pinColor }} />
+                                                                                                  <span className="font-mono text-[9px] uppercase tracking-wider font-bold opacity-75">
+                                                                                                    KEEPSAKE NOTE
+                                                                                                  </span>
+                                                                                                </div>
 
-                  <h3 className="font-serif font-bold text-xs uppercase tracking-wide">
-                    {note.title}
-                  </h3>
+                                                                                                  <h3 className="font-serif font-bold text-sm tracking-wide">
+                                                                                                    {note.title}
+                                                                                                  </h3>
 
-                  <p className="font-sans text-xs leading-relaxed">
-                    {note.content}
-                  </p>
+                                                                                                  <p className="font-sans text-xs leading-relaxed">
+                                                                                                    {note.content}
+                                                                                                  </p>
 
-                  <div className="pt-2 border-t border-black/10 font-mono text-[10px] italic opacity-85">
-                    {note.annotation}
-                  </div>
-                </div>
-              );
+                                                                                                    <div className="pt-2 border-t border-black/10 font-handwriting text-base italic opacity-90">
+                                                                                                      "{note.annotation}"
+                                                                                                    </div>
+                                                                                                  </div>
+                                                                                                  );
             })}
-          </div>
+                                                                                              </div>
         </section>
 
-        {/* SECTION 5: FINAL NARRATIVE BRIDGE TO ACT III */}
-        <section className="p-8 rounded-lg border-2 border-brass/60 bg-investigation-forest/90 shadow-spotlight text-center space-y-4">
-          <div className="w-12 h-12 rounded-full border border-brass bg-brass/10 text-brass flex items-center justify-center mx-auto">
-            <Sparkles className="w-6 h-6 animate-pulse" />
-          </div>
+                                                                                      {/* SECTION 5: FINAL NARRATIVE BRIDGE TO ACT III */}
+                                                                                          <section className="p-8 sm:p-12 rounded-3xl border border-[#d99b9b]/50 bg-gradient-to-br from-[#ffffff] via-[#fceeeb]/40 to-[#fdfaf5] shadow-gift text-center space-y-4">
+                                                                                            <div className="w-14 h-14 rounded-full border border-[#d99b9b] bg-[#ffffff] text-[#d99b9b] flex items-center justify-center mx-auto shadow-sm">
+                                                                                              <Gift className="w-7 h-7 animate-bounce" />
+                                                                                            </div>
 
-          <h2 className="text-2xl font-serif font-black text-parchment">
-            READY TO REVEAL WHERE SHE IS?
-          </h2>
+                                                                                              <h2 className="text-3xl sm:text-4xl font-serif font-black text-[#38261e] tracking-tight">
+                                                                                                READY TO REVEAL WHERE SHE IS?
+                                                                                              </h2>
 
-          <p className="text-xs sm:text-sm font-sans text-investigation-muted max-w-xl mx-auto leading-relaxed">
-            The evidence has been examined, the letters unfolded, and the suspect alibis disproven. The scenic overlook awaits.
-          </p>
+                                                                                                <p className="text-xs sm:text-sm font-sans text-[#7a685c] max-w-xl mx-auto leading-relaxed">
+                                                                                                  The clues have been gathered, the envelopes opened, and the testimonies confirmed. The golden-hour scenic overlook awaits.
+                                                                                                </p>
 
-          <div className="pt-2">
-            <Link
-              to="/gallery"
-              onClick={() => soundFx.playAccessGranted()}
-              className="px-8 py-3.5 bg-brass hover:bg-brass-light text-charcoal-900 rounded font-serif font-bold text-sm tracking-widest uppercase transition-all shadow-brass inline-flex items-center space-x-2"
-            >
-              <span>ENTER GALLERY // SUBJECT FOUND</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </section>
+                                                                                                  <div className="pt-3">
+                                                                                                    <Link
+                                                                                                      to="/gallery"
+                                                                                                      onClick={() => soundFx.playAccessGranted()}
+                                                                                                      className="px-8 py-4 bg-gradient-to-r from-[#d99b9b] via-[#c58585] to-[#9c5460] hover:brightness-105 text-white rounded-xl font-serif font-bold text-sm tracking-widest uppercase transition-all shadow-md hover:shadow-lg inline-flex items-center space-x-2.5"
+                                                                                                    >
+                                                                                                      <span>ENTER GALLERY // SUBJECT FOUND</span>
+                                                                                                      <ArrowRight className="w-4 h-4" />
+                                                                                                    </Link>
+                                                                                                  </div>
+                                                                                                </section>
 
-      </main>
+                                                                                              </main>
 
-      <Footer />
+                                                                                              <Footer />
 
-      {/* Primary Evidence Modal Dialog (Keyboard Accessible & Trapped) */}
-      <AnimatePresence>
-        {selectedItem && (
-          <EvidenceModal
-            item={selectedItem}
-            onClose={() => setSelectedItem(null)}
-          />
-        )}
-      </AnimatePresence>
+                                                                                              {/* Primary Evidence Modal Dialog (Keyboard Accessible & Trapped) */}
+                                                                                              <AnimatePresence>
+                                                                                                {selectedItem && (
+                                                                                                  <EvidenceModal
+                                                                                                    item={selectedItem}
+                                                                                                    onClose={() => setSelectedItem(null)}
+                                                                                                  />
+                                                                                                )}
+                                                                                              </AnimatePresence>
 
-      {/* Letter Unfolding Dialog Modal */}
-      <AnimatePresence>
-        {selectedLetter && (
-          <LetterModal
-            letter={selectedLetter}
-            onClose={() => setSelectedLetter(null)}
-            onProceedToFound={handleProceedToFound}
-          />
-        )}
-      </AnimatePresence>
+                                                                                              {/* Letter Unfolding Dialog Modal */}
+                                                                                              <AnimatePresence>
+                                                                                                {selectedLetter && (
+                                                                                                  <LetterModal
+                                                                                                    letter={selectedLetter}
+                                                                                                    onClose={() => setSelectedLetter(null)}
+                                                                                                    onProceedToFound={handleProceedToFound}
+                                                                                                  />
+                                                                                                )}
+                                                                                              </AnimatePresence>
 
-
-    </motion.div>
-  );
+                                                                                            </motion.div>
+                                                                                            );
 };

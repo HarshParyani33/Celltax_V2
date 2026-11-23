@@ -4,94 +4,135 @@
 
 @layer base {
   :root {
-    --color-base: #070d0a;
-    --color-forest: #0c1611;
-    --color-surface: #122019;
+    --color-base: #faf6f0;
+    --color-forest: #f5eee4;
+    --color-surface: #ffffff;
     --color-brass: #c5a059;
     --color-brass-light: #dfbf7a;
-    --color-parchment: #f4ebd8;
+    --color-parchment: #fdfbf7;
+    --color-text: #38261e;
+    --color-rose: #d99b9b;
   }
 
   body {
-    background-color: #070d0a;
-    color: #c9d6cf;
+    background-color: #faf6f0;
+    color: #38261e;
     font-family: 'Inter', sans-serif;
     overflow-x: hidden;
   }
 }
 
-/* Atmospheric Scanline and Vignette Effects */
-.bg-vignette {
-  background: radial-gradient(circle at 50% 50%, transparent 20%, rgba(5, 9, 7, 0.75) 75%, rgba(2, 4, 3, 0.95) 100%);
-}
 
-.terminal-scanlines {
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%, 
-    rgba(0, 0, 0, 0.3) 50%
-  );
-  background-size: 100% 4px;
-}
-
-.aged-paper-texture {
-  background-color: #f4ebd8;
-  background-image: radial-gradient(#dfd2af 0.75px, transparent 0.75px), radial-gradient(#d5c497 0.75px, #f4ebd8 0.75px);
-  background-size: 30px 30px;
-  background-position: 0 0, 15px 15px;
-}
-
-.brass-border {
-  border: 1px solid rgba(197, 160, 89, 0.3);
-  box-shadow: 0 0 15px -3px rgba(197, 160, 89, 0.15), inset 0 0 15px -3px rgba(197, 160, 89, 0.05);
-}
-
-.brass-border-active {
-  border: 1px solid rgba(223, 191, 122, 0.7);
-  box-shadow: 0 0 25px -2px rgba(197, 160, 89, 0.3), inset 0 0 20px -2px rgba(197, 160, 89, 0.1);
-}
-
-.stamp-confidential {
-  color: #991b1b;
-  border: 3px solid #991b1b;
-  text-transform: uppercase;
-  font-family: 'Courier Prime', monospace;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  transform: rotate(-4deg);
-  opacity: 0.88;
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 2px;
-  box-shadow: inset 0 0 0 1px #991b1b;
-}
-
-/* Custom Scrollbar for Confidential Archive */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #09120e;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1f372c;
-  border-radius: 3px;
-  border: 1px solid #14251e;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #c5a059;
-}
-
-/* Global Reduced Motion Compliance */
-@media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  /* Premium Personal Scrapbook & Stationery Textures */
+  .texture-paper {
+    background-color: #fdfbf7;
+    background-image: radial-gradient(#eadbc8 0.65px, transparent 0.65px), radial-gradient(#e5d4be 0.65px, #fdfbf7 0.65px);
+    background-size: 24px 24px;
+    background-position: 0 0, 12px 12px;
   }
-}
 
+
+    .texture-linen {
+      background-color: #f5efe6;
+      background-image:
+        linear-gradient(90deg, rgba(210, 190, 170, 0.08) 1px, transparent 1px),
+        linear-gradient(rgba(210, 190, 170, 0.08) 1px, transparent 1px);
+      background-size: 8px 8px;
+    }
+
+
+      .texture-desk {
+        background: radial-gradient(circle at 50% 30%, #fffdfa 0%, #faf6f0 60%, #f4ece1 100%);
+      }
+
+
+        /* Washi Tape Embellishments */
+        .washi-tape-rose {
+          background: rgba(217, 155, 155, 0.7);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+          backdrop-filter: blur(1px);
+        }
+
+
+          .washi-tape-gold {
+            background: rgba(197, 160, 89, 0.75);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(1px);
+          }
+
+          .washi-tape-sage {
+            background: rgba(156, 175, 136, 0.75);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(1px);
+          }
+
+          /* Romantic Postal & Heart Stamp */
+          .stamp-confidential {
+            color: #9c5460;
+            border: 2px dashed #9c5460;
+            text-transform: uppercase;
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            transform: rotate(-3deg);
+            opacity: 0.9;
+            display: inline-block;
+            padding: 0.2rem 0.65rem;
+            border-radius: 4px;
+            background: rgba(244, 218, 218, 0.25);
+          }
+
+          /* 3D Physical Page-Turn Primitives */
+          .perspective-1500 {
+            perspective: 1500px;
+          }
+
+          .transform-style-3d {
+            transform-style: preserve-3d;
+          }
+
+          .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+          }
+
+          .origin-left-spine {
+            transform-origin: left center;
+          }
+
+          .origin-right-spine {
+            transform-origin: right center;
+          }
+
+          /* Custom Scrollbar for Gift Theme */
+          ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+          }
+
+          ::-webkit-scrollbar-track {
+            background: #f5efe6;
+          }
+
+          ::-webkit-scrollbar-thumb {
+            background: #d4c2b0;
+            border-radius: 3px;
+            border: 1px solid #e8dcce;
+          }
+
+          ::-webkit-scrollbar-thumb:hover {
+            background: #c5a059;
+          }
+
+          /* Global Reduced Motion Compliance */
+          @media (prefers-reduced-motion: reduce) {
+
+            *,
+            ::before,
+            ::after {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+              scroll-behavior: auto !important;
+            }
+          }
